@@ -33,7 +33,7 @@ namespace hf
 				Log::Fatal("Failed to init SDL2");
 			}
 
-			m_MainWindow.Create(info.title, info.width, info.height, hf::WindowFlags::Vulkan | hf::WindowFlags::NoTitleBar | hf::WindowFlags::Resizable);
+			m_MainWindow.Create(info.title, info.width, info.height, hf::WindowFlags::Vulkan | hf::WindowFlags::Resizable);
 			m_MainWindow.SetDraggableRegion({ 0, 0, 50, 30 });
 			m_MainWindow.UseWindowHitTest(true);
 

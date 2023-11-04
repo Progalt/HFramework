@@ -134,6 +134,7 @@ namespace hf
 
 		bool m_Visible = true;
 		bool m_Resizable = false;
+		bool m_Minimised = false;
 
 		uint32_t m_WindowID = 0;
 

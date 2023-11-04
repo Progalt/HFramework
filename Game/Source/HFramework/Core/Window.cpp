@@ -23,39 +23,55 @@ namespace hf
 		{
 			HitTestData* hitData = (HitTestData*)data;
 
-			const int resizeBorder = 10;
-			int w, h;
-			SDL_GetWindowSize(win, &w, &h);
+			const int MOUSE_GRAB_PADDING = 10;
 
 			if (hitData->dragZone.Contains(pt->x, pt->y))
 			{
 				return SDL_HITTEST_DRAGGABLE;
 			}
 
-			if (pt->x < resizeBorder && pt->y < resizeBorder) {
-				return SDL_HITTEST_RESIZE_TOPLEFT;
+			int Width, Height;
+			SDL_GetWindowSize(win, &Width, &Height);
+
+			if (pt->y < MOUSE_GRAB_PADDING)
+			{
+				if (pt->x < MOUSE_GRAB_PADDING)
+				{
+					return SDL_HITTEST_RESIZE_TOPLEFT;
+				}
+				else if (pt->x > Width - MOUSE_GRAB_PADDING)
+				{
+					return SDL_HITTEST_RESIZE_TOPRIGHT;
+				}
+				else
+				{
+					return SDL_HITTEST_RESIZE_TOP;
+				}
 			}
-			else if (pt->x > resizeBorder && pt->x < w - resizeBorder && pt->y < resizeBorder) {
-				return SDL_HITTEST_RESIZE_TOP;
+			else if (pt->y > Height - MOUSE_GRAB_PADDING)
+			{
+				if (pt->x < MOUSE_GRAB_PADDING)
+				{
+					return SDL_HITTEST_RESIZE_BOTTOMLEFT;
+				}
+				else if (pt->x > Width - MOUSE_GRAB_PADDING)
+				{
+					return SDL_HITTEST_RESIZE_BOTTOMRIGHT;
+				}
+				else
+				{
+					return SDL_HITTEST_RESIZE_BOTTOM;
+				}
 			}
-			else if (pt->x > w - resizeBorder && pt->y < resizeBorder) {
-				return SDL_HITTEST_RESIZE_TOPRIGHT;
-			}
-			else if (pt->x > w - resizeBorder && pt->y > resizeBorder && pt->y < h - resizeBorder) {
-				return SDL_HITTEST_RESIZE_RIGHT;
-			}
-			else if (pt->x > w - resizeBorder && pt->y > h - resizeBorder) {
-				return SDL_HITTEST_RESIZE_BOTTOMRIGHT;
-			}
-			else if (pt->x < w - resizeBorder && pt->x > resizeBorder && pt->y > h - resizeBorder) {
-				return SDL_HITTEST_RESIZE_BOTTOM;
-			}
-			else if (pt->x < resizeBorder && pt->y > h - resizeBorder) {
-				return SDL_HITTEST_RESIZE_BOTTOMLEFT;
-			}
-			else if (pt->x < resizeBorder && pt->y < h - resizeBorder && pt->y > resizeBorder) {
+			else if (pt->x < MOUSE_GRAB_PADDING)
+			{
 				return SDL_HITTEST_RESIZE_LEFT;
 			}
+			else if (pt->x > Width - MOUSE_GRAB_PADDING)
+			{
+				return SDL_HITTEST_RESIZE_RIGHT;
+			}
+			
 
 			return SDL_HITTEST_NORMAL;
 		}
@@ -67,6 +83,7 @@ namespace hf
 		LRESULT CALLBACK SDLOverrideWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			static RECT border_thickness;
+			int BORDERWIDTH = 1;
 
 			switch (uMsg)
 			{
@@ -91,9 +108,18 @@ namespace hf
 				}*/
 			case WM_NCCALCSIZE:
 			{
-				return 0;
+				if (wParam)
+				{
+					//NCCALCSIZE_PARAMS* Params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+					//Params->rgrc[0].top += BORDERWIDTH; // rgrc[0] is what makes this work, don't know what others (rgrc[1], rgrc[2]) do, but why not change them all?
+					//Params->rgrc[0].left += BORDERWIDTH;
+					//Params->rgrc[0].bottom += BORDERWIDTH;
+					//Params->rgrc[0].right += BORDERWIDTH;
+					return 0;
+				}
+				return DefWindowProc(hwnd, uMsg, wParam, lParam);
 			}
-				break;
+			break;
 			}
 
 			return SDLWindowProc(hwnd, uMsg, wParam, lParam);
@@ -177,6 +203,7 @@ namespace hf
 #ifdef HF_PLATFORM_WINDOWS
 
 		// TODO: Need to add a method to change the colour of the window border
+		// TODO: Window resizing is currently broken 
 
 		// All this makes the window look like a window
 		// Its a pain and requires rerouting the SDL wndproc through our own and handling some events ourselves
@@ -202,6 +229,8 @@ namespace hf
 			MARGINS borderless = { 1,1,1,1 };
 			DwmExtendFrameIntoClientArea(hwnd, &borderless);
 			SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+
+
 		}
 #endif
 	}
@@ -244,7 +273,7 @@ namespace hf
 
 				Close();
 				break;
-			case SDL_WINDOWEVENT_SIZE_CHANGED:
+			case SDL_WINDOWEVENT_RESIZED:
 			{
 				m_Width = ev->window.data1;
 				m_Height = ev->window.data2;
@@ -252,11 +281,28 @@ namespace hf
 				if (m_OnResizeCallback)
 					m_OnResizeCallback(m_Width, m_Height);
 
+				break;
+			}
+			case SDL_WINDOWEVENT_EXPOSED:
+			{
+				// This event is triggered every time the window is exposed again and needs a redraw
+				// We want to get the size again if its not minmised so we start redrawing
+				if (m_Minimised)
+				{
+					int x, y;
+					SDL_GetWindowSize(m_Window, &x, &y);
+
+					m_Width = x;
+					m_Height = y;
+
+					m_Minimised = false;
+				}
 			}
 				break;
 			case SDL_WINDOWEVENT_MINIMIZED:
 				m_Width = 0;
 				m_Height = 0;
+				m_Minimised = true;
 				break;
 			}
 
