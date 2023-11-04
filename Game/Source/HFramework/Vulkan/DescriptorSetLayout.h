@@ -39,6 +39,33 @@ namespace hf
 				return *this;
 			}
 
+			DescriptorSetLayout& AddTextureSampler(ShaderStage stage, uint32_t binding, uint32_t count)
+			{
+				VkDescriptorSetLayoutBinding layoutBinding{};
+				layoutBinding.binding = binding;
+				layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				layoutBinding.descriptorCount = count;
+
+				switch (stage)
+				{
+				case ShaderStage::Vertex:
+					layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+					break;
+				case ShaderStage::Fragment:
+					layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+					break;
+				case ShaderStage::Compute:
+					layoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+					break;
+				};
+
+				layoutBinding.pImmutableSamplers = nullptr;
+
+				m_LayoutBindings.push_back(layoutBinding);
+
+				return *this;
+			}
+
 
 			size_t Hash()
 			{

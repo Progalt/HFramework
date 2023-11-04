@@ -4,6 +4,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 static std::vector<uint8_t> readFile(const std::string& filename) 
 {
 	std::ifstream instream(filename, std::ios::in | std::ios::binary);
@@ -25,6 +28,7 @@ public:
 	{
 		float x, y, z;
 		float r, g, b, a;
+		float u, v;
 	};
 
 	void Start() override
@@ -44,6 +48,7 @@ public:
 
 		hf::vulkan::DescriptorSetLayout layout1;
 		layout1.AddUniformBuffer(hf::ShaderStage::Vertex, 0, 1);
+		layout1.AddTextureSampler(hf::ShaderStage::Fragment, 1, 1);
 
 		hf::vulkan::GraphicsPipelineDesc pipelineDesc{};
 		pipelineDesc.colourTargetFormats = { swapchain.GetImageFormat() };
@@ -57,45 +62,60 @@ public:
 			hf::vulkan::VertexInput(0, sizeof(Vertex))
 			.AddAttribute(hf::vulkan::VertexAttribute(0, hf::Format::RGB32F, 0))
 			.AddAttribute(hf::vulkan::VertexAttribute(1, hf::Format::RGBA32F, 3 * sizeof(float)))
+			.AddAttribute(hf::vulkan::VertexAttribute(2, hf::Format::RG32F, 7 * sizeof(float)))
 		);
 
 		graphicsPipeline = device.RetrieveGraphicsPipeline(pipelineDesc);
 
 		std::vector<Vertex> vertices = {
-			{ -0.5f,  -0.5f, 0.0f,   1.0f, 0.0f, 0.0f, 1.0f },  
-			{ 0.5f,  -0.5f, 0.0f,   0.0f, 1.0f, 0.0f, 1.0f },
-			{ 0.5f,  0.5f, 0.0f ,   0.0f, 0.0f, 1.0f, 1.0f},
-			{ -0.5f,  0.5f, 0.0f ,   0.0f, 1.0f, 1.0f, 1.0f}
+			{ -0.5f,  -0.5f, 0.0f,   1.0f, 1.0f, 1.0f, 1.0f,	0.0f, 0.0f },
+			{ 0.5f,  -0.5f, 0.0f,   1.0f, 1.0f, 1.0f, 1.0f,		1.0f, 0.0f },
+			{ 0.5f,  0.5f, 0.0f ,   1.0f, 1.0f, 1.0f, 1.0f,		1.0f, 1.0f },
+			{ -0.5f,  0.5f, 0.0f ,   1.0f, 1.0f, 1.0f, 1.0f,	0.0f, 1.0f }
 		};
 		std::vector<uint16_t> indices = {
 			0, 1, 2,
 			0, 2, 3
 		};
 
+		
+
+		hf::vulkan::BufferDesc stagingBufferDesc{};
+		stagingBufferDesc.usage = hf::vulkan::BufferUsage::TransferSrc;
+		stagingBufferDesc.visibility = hf::vulkan::BufferVisibility::HostVisible;
+		stagingBufferDesc.bufferSize = sizeof(Vertex) * vertices.size() + sizeof(uint16_t) * indices.size();
+
+		hf::vulkan::Buffer staging = device.CreateBuffer(stagingBufferDesc);
+
 		hf::vulkan::BufferDesc bufferDesc{};
-		bufferDesc.usage = hf::vulkan::BufferUsage::Vertex;
-		bufferDesc.visibility = hf::vulkan::BufferVisibility::HostVisible;
+		bufferDesc.usage = hf::vulkan::BufferUsage::Vertex | hf::vulkan::BufferUsage::TransferDst;
+		bufferDesc.visibility = hf::vulkan::BufferVisibility::Device;
 		bufferDesc.bufferSize = sizeof(Vertex) * vertices.size();
 
 		vertexBuffer = device.CreateBuffer(bufferDesc);
 
-		void* mapped = vertexBuffer.Map();
-		memcpy(mapped, vertices.data(), bufferDesc.bufferSize);
-		vertexBuffer.Unmap();
 
 		hf::vulkan::BufferDesc indexBufferDesc{};
-		indexBufferDesc.usage = hf::vulkan::BufferUsage::Index;
-		indexBufferDesc.visibility = hf::vulkan::BufferVisibility::HostVisible;
+		indexBufferDesc.usage = hf::vulkan::BufferUsage::Index | hf::vulkan::BufferUsage::TransferDst;
+		indexBufferDesc.visibility = hf::vulkan::BufferVisibility::Device;
 		indexBufferDesc.bufferSize = sizeof(uint16_t) * indices.size();
 
 		indexBuffer = device.CreateBuffer(indexBufferDesc);
 
-		void* mappedIdx = indexBuffer.Map();
-		memcpy(mappedIdx, indices.data(), indexBufferDesc.bufferSize);
-		indexBuffer.Unmap();
+		void* mapped = staging.Map();
+		char* mappedC = (char*)mapped;
+		memcpy(mappedC, vertices.data(), bufferDesc.bufferSize);
+		memcpy(mappedC + bufferDesc.bufferSize, indices.data(), indexBufferDesc.bufferSize);
+		staging.Unmap();
+
+		device.ExecuteSingleUsageCommandList(hf::vulkan::Queue::Graphics, [&](hf::vulkan::CommandList& cmd)
+			{
+				cmd.CopyBuffer(&staging, &vertexBuffer, sizeof(Vertex) * vertices.size());
+				cmd.CopyBuffer(&staging, &indexBuffer, sizeof(uint16_t) * indices.size(), sizeof(Vertex) * vertices.size());
+			});
 
 		
-		proj = glm::perspective(glm::radians(60.0f), (float)GetMainWindow()->GetWidth() / (float)GetMainWindow()->GetHeight(), 0.01f, 100.0f);
+		proj = glm::perspective(glm::radians(70.0f), (float)GetMainWindow()->GetWidth() / (float)GetMainWindow()->GetHeight(), 0.01f, 100.0f);
 
 
 		hf::vulkan::BufferDesc uniformDesc{};
@@ -105,14 +125,63 @@ public:
 
 		uniformBuffer = device.CreateBuffer(uniformDesc);
 
+
+		/* texture load */
+
+		int w, h, c;
+		uint8_t* pixels = stbi_load("Assets/512.png", &w, &h, &c, STBI_rgb_alpha);
+
+		if (!pixels)
+			hf::Log::Fatal("Failed to load image");
+
+		hf::vulkan::TextureDesc textureDesc{};
+		textureDesc.width = w;
+		textureDesc.height = h;
+		textureDesc.format = hf::Format::RGBA8_SRGB;
+		textureDesc.type = hf::vulkan::TextureType::Flat2D;
+
+		testTexture = device.CreateTexture(textureDesc);
+
+		hf::vulkan::BufferDesc bufferDesc2{};
+		bufferDesc2.usage = hf::vulkan::BufferUsage::TransferSrc;
+		bufferDesc2.visibility = hf::vulkan::BufferVisibility::HostVisible;
+		bufferDesc2.bufferSize = w * h * 4;
+
+		hf::vulkan::Buffer imgStaging = device.CreateBuffer(bufferDesc2);
+
+		void* imgMem = imgStaging.Map();
+		memcpy(imgMem, pixels, bufferDesc2.bufferSize);
+		imgStaging.Unmap();
+
+		device.ExecuteSingleUsageCommandList(hf::vulkan::Queue::Graphics, [&](hf::vulkan::CommandList& cmd)
+			{
+				cmd.ResourceBarrier(&testTexture, hf::vulkan::ImageLayout::TransferDst);
+				hf::vulkan::BufferImageCopy imgCopy{};
+				imgCopy.extent.width = w;
+				imgCopy.extent.height = h;
+				cmd.CopyBufferToTexture(&imgStaging, &testTexture, imgCopy);
+				cmd.ResourceBarrier(&testTexture, hf::vulkan::ImageLayout::ShaderReadOnlyOptimal);
+			});
+
+		hf::vulkan::SamplerState samplerState;
+		samplerState.min = hf::FilterMode::Linear;
+		samplerState.mag = hf::FilterMode::Linear;
+		samplerState.maxAnisotropy = device.GetSupportedFeatures().maxAnisotropy;
+
 		descriptorSet = device.AllocateDescriptorSet(layout1);
 		descriptorSet.BindUniformBuffer(uniformBuffer, 0);
+		descriptorSet.BindTextureSampler(testTexture, samplerState, 1);
 		descriptorSet.Write();
+
+		
 
 		GetMainWindow()->SetResizeCallback([&](uint32_t width, uint32_t height) 
 			{
 				proj = glm::perspective(glm::radians(60.0f), (float)GetMainWindow()->GetWidth() / (float)GetMainWindow()->GetHeight(), 0.01f, 100.0f);
 			});
+
+		staging.Dispose();
+		imgStaging.Dispose();
 	}
 
 	glm::mat4 proj;
@@ -190,6 +259,7 @@ public:
 		indexBuffer.Dispose();
 		uniformBuffer.Dispose();
 		graphicsPipeline.Dispose();
+		testTexture.Dispose();
 
 		for (auto& semaphore : imageAvailable)
 			semaphore.Dispose();
@@ -213,6 +283,7 @@ public:
 	hf::vulkan::Buffer indexBuffer;
 	hf::vulkan::Buffer uniformBuffer;
 	hf::vulkan::DescriptorSet descriptorSet;
+	hf::vulkan::Texture testTexture;
 
 	hf::vulkan::GraphicsPipeline graphicsPipeline;
 

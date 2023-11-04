@@ -145,6 +145,7 @@
     <ClCompile Include="Source\HFramework\Vulkan\GraphicsPipeline.cpp" />
     <ClCompile Include="Source\HFramework\Vulkan\Swapchain.cpp" />
     <ClCompile Include="Source\HFramework\Vulkan\Buffer.cpp" />
+    <ClCompile Include="Source\HFramework\Vulkan\Texture.cpp" />
     <ClCompile Include="Source\HFramework\Vulkan\Vendor\vk_mem_alloc.cpp" />
     <ClCompile Include="Source\Main.cpp" />
   </ItemGroup>
@@ -158,8 +159,10 @@
     <ClInclude Include="Source\HFramework\Core\Util.h" />
     <ClInclude Include="Source\HFramework\Core\Window.h" />
     <ClInclude Include="Source\HFramework\Graphics\Format.h" />
+    <ClInclude Include="Source\HFramework\Graphics\Renderer.h" />
     <ClInclude Include="Source\HFramework\Graphics\ShaderEnums.h" />
     <ClInclude Include="Source\HFramework\HFramework.h" />
+    <ClInclude Include="Source\HFramework\SceneGraph\Node.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Buffer.h" />
     <ClInclude Include="Source\HFramework\Vulkan\CommandList.h" />
     <ClInclude Include="Source\HFramework\Vulkan\DescriptorSet.h" />
@@ -169,6 +172,7 @@
     <ClInclude Include="Source\HFramework\Vulkan\FencePool.h" />
     <ClInclude Include="Source\HFramework\Vulkan\FormatConvert.h" />
     <ClInclude Include="Source\HFramework\Vulkan\GraphicsPipeline.h" />
+    <ClInclude Include="Source\HFramework\Vulkan\SamplerState.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Semaphore.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Swapchain.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Texture.h" />

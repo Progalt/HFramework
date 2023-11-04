@@ -6,6 +6,7 @@
 #include "GraphicsPipeline.h"
 #include "Buffer.h"
 #include "DescriptorSet.h"
+#include "Texture.h"
 
 namespace hf
 {
@@ -71,6 +72,27 @@ namespace hf
 
 		};
 
+		struct BufferImageCopy
+		{
+			size_t bufferOffset = 0;
+			size_t bufferImageHeight = 0;
+			size_t bufferRowLength = 0;
+
+			uint32_t mipLevel = 0;
+			uint32_t baseArrayLayer = 0;
+			uint32_t layerCount = 1;
+
+			struct
+			{
+				int x = 0, y = 0, z = 0;
+			} offset;
+
+			struct
+			{
+				uint32_t width, height, depth = 1;
+			} extent;
+		};
+
 		class CommandList
 		{
 		public:
@@ -104,6 +126,13 @@ namespace hf
 			void BindIndexBuffer(Buffer* buffer, IndexType type, size_t offset = 0);
 
 			void BindDescriptorSets(std::vector<DescriptorSet*> sets, uint32_t firstSet);
+
+
+			/* Copy Functions */
+
+			void CopyBufferToTexture(Buffer* buffer, Texture* texture, const BufferImageCopy& copyInfo);
+
+			void CopyBuffer(Buffer* src, Buffer* dst, size_t size, size_t srcOffset = 0, size_t dstOffset = 0);
 
 		private:
 

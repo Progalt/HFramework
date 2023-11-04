@@ -1,13 +1,35 @@
 #pragma once
 #include "VulkanInclude.h"
+#include "../Graphics/Format.h"
 
 namespace hf
 {
 	namespace vulkan
 	{
+		enum class TextureType
+		{
+			Flat2D,
+			Array2D, 
+			Flat3D,
+		};
+
+		struct TextureDesc
+		{
+			Format format;
+			uint32_t width = 0;
+			uint32_t height = 0;
+			uint32_t depth = 1;
+			uint32_t mipLevels = 1;
+			uint32_t arrayLevels = 1;
+			TextureType type;
+			bool isRenderTarget = false;
+		};
+
 		class Texture
 		{
 		public:
+
+			void Dispose();
 
 			bool IsColourFormat()
 			{
@@ -35,17 +57,26 @@ namespace hf
 
 			friend class Swapchain;
 			friend class CommandList;
+			friend class DescriptorSet;
+			friend class Device;
+
+			VkDevice m_AssociatedDevice;
+			VmaAllocator m_AssociatedAllocator;
 
 			VkImage m_Image;
 			VkImageView m_ImageView;
+			VmaAllocation m_Allocation;
+
 			VkImageLayout m_Layout;
 			VkFormat m_Format;
 
-			uint32_t m_Width, m_Height;
+			uint32_t m_Width, m_Height, m_Depth = 1;
 
 			bool m_SwapchainImage = false;
 
-			bool m_InternallyManaged;
+			bool m_InternallyManaged = false;
+
+			void Create(const TextureDesc& desc);
 		};
 	}
 }

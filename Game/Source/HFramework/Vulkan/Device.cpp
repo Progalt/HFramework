@@ -37,6 +37,14 @@ namespace hf
 			Log::Info("Created VMA Allocator");
 
 			m_SetAllocator.Init(m_Device);
+
+
+			// Lets get the supported features and fill out the struct
+
+			VkPhysicalDeviceProperties properties{};
+			vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
+
+			m_SupportedFeatures.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 		}
 
 		void Device::Dispose()
@@ -47,6 +55,11 @@ namespace hf
 			m_SetAllocator.Dispose();
 
 			vmaDestroyAllocator(m_Allocator);
+
+			for (auto& sampler : m_Samplers)
+			{
+				vkDestroySampler(m_Device, sampler.second, nullptr);
+			}
 
 			for (auto& setLayout : m_DescriptorSetLayouts)
 			{
@@ -131,12 +144,22 @@ namespace hf
 			return buf;
 		}
 
+		Texture Device::CreateTexture(const TextureDesc& desc)
+		{
+			Texture tex;
+			tex.m_AssociatedAllocator = m_Allocator;
+			tex.m_AssociatedDevice = m_Device;
+
+			tex.Create(desc);
+			return tex;
+		}
+
 		DescriptorSet Device::AllocateDescriptorSet(DescriptorSetLayout layout)
 		{
 			VkDescriptorSetLayout setLayout = GetSetLayout(layout);
 
 			DescriptorSet set = DescriptorSet();
-			set.m_Device = m_Device;
+			set.m_Device = this;
 			if (!m_SetAllocator.Allocate(&set.m_Set, setLayout))
 			{
 				Log::Error("Failed to Allocate Descriptor set");
@@ -403,6 +426,86 @@ namespace hf
 			m_DescriptorSetLayouts[hash] = setLayout;
 
 			return setLayout;
+		}
+
+
+		VkSampler Device::GetSampler(SamplerState& state)
+		{
+			if (m_Samplers.find(state) != m_Samplers.end())
+			{
+				return m_Samplers[state];
+			}
+
+			auto convertFilter = [](FilterMode mode)
+				{
+					switch (mode)
+					{
+					case FilterMode::Linear:
+						return VK_FILTER_LINEAR;
+						break;
+					case FilterMode::Nearest:
+						return VK_FILTER_NEAREST;
+						break;
+					}
+
+					return VK_FILTER_NEAREST;
+				};
+
+			auto convertWrap = [](WrapMode mode)
+				{
+					switch (mode)
+					{
+					case WrapMode::Repeat:
+						return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+						break;
+					case WrapMode::ClampToEdge:
+						return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+						break;
+					}
+				};
+
+			VkSamplerCreateInfo samplerInfo{};
+			samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+			samplerInfo.minFilter = convertFilter(state.min);
+			samplerInfo.magFilter = convertFilter(state.mag);
+			samplerInfo.addressModeU = convertWrap(state.wrapU);
+			samplerInfo.addressModeV = convertWrap(state.wrapV);
+			samplerInfo.addressModeW = convertWrap(state.wrapW);
+
+			if (state.maxAnisotropy && m_SupportedFeatures.maxAnisotropy > 0.0f)
+			{
+				samplerInfo.anisotropyEnable = VK_TRUE;
+				samplerInfo.maxAnisotropy = std::min(state.maxAnisotropy, m_SupportedFeatures.maxAnisotropy);
+			}
+			else
+			{
+				samplerInfo.anisotropyEnable = VK_FALSE;
+			}
+
+
+			samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+			samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+			samplerInfo.compareEnable = VK_FALSE;
+			samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+			samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+			samplerInfo.mipLodBias = 0.0f;
+			samplerInfo.minLod = 0.0f;
+			samplerInfo.maxLod = 0.0f;
+
+			VkSampler sampler;
+
+			if (vkCreateSampler(m_Device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+			{
+				Log::Fatal("Failed to create Sampler State");
+			}
+
+			Log::Info("Created new Sampler State");
+
+			m_Samplers[state] = sampler;
+
+			return sampler;
 		}
 
 	}

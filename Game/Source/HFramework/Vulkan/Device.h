@@ -9,6 +9,7 @@
 #include "Buffer.h"
 #include "DescriptorSetAllocator.h"
 #include "DescriptorSet.h"
+#include "SamplerState.h"
 
 namespace hf
 {
@@ -35,6 +36,11 @@ namespace hf
 			Window* window;
 		};
 
+		struct SupportedFeatures
+		{
+			float maxAnisotropy;
+		};
+
 		class Device
 		{
 		public:
@@ -52,6 +58,8 @@ namespace hf
 
 			Buffer CreateBuffer(const BufferDesc& desc);
 
+			Texture CreateTexture(const TextureDesc& desc);
+
 			DescriptorSet AllocateDescriptorSet(DescriptorSetLayout layout);
 
 			void ExecuteSingleUsageCommandList(Queue queue, std::function<void(CommandList&)> func, Semaphore* signal = nullptr);
@@ -62,7 +70,13 @@ namespace hf
 
 			void WaitIdle() { vkDeviceWaitIdle(m_Device); }
 
+			const SupportedFeatures& GetSupportedFeatures() const { return m_SupportedFeatures; }
+
 		private:
+
+			friend class DescriptorSet;
+
+			SupportedFeatures m_SupportedFeatures;
 
 			Window* m_AssociatedWindow;
 
@@ -122,6 +136,25 @@ namespace hf
 			DescriptorSetAllocator m_SetAllocator;
 
 			VkDescriptorSetLayout GetSetLayout(DescriptorSetLayout& layout);
+
+			struct SamplerStateHash
+			{
+				size_t operator()(const SamplerState& state) const
+				{
+					size_t hash = 0;
+					hash_combine(hash, state.min);
+					hash_combine(hash, state.mag);
+					hash_combine(hash, state.wrapU);
+					hash_combine(hash, state.wrapV);
+					hash_combine(hash, state.wrapW);
+					hash_combine(hash, state.maxAnisotropy);
+					return hash;
+				}
+			};
+
+			std::unordered_map<SamplerState, VkSampler, SamplerStateHash> m_Samplers;
+
+			VkSampler GetSampler(SamplerState& state);
 
 			// Creation functions (Unlike other functions in device they are found in DeviceCreation.cpp)
 

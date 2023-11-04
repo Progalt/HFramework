@@ -250,5 +250,36 @@ namespace hf
 
 			texture->m_Layout = (VkImageLayout)newLayout;
 		}
+
+		void CommandList::CopyBufferToTexture(Buffer* buffer, Texture* texture, const BufferImageCopy& copyInfo)
+		{
+
+			VkBufferImageCopy copy{};
+			copy.bufferOffset = copyInfo.bufferOffset;
+			copy.bufferRowLength = copyInfo.bufferRowLength;
+			copy.bufferImageHeight = copyInfo.bufferImageHeight;
+			
+			copy.imageSubresource.aspectMask = GetAspectMask(texture);
+			copy.imageSubresource.mipLevel = copyInfo.mipLevel;
+			copy.imageSubresource.baseArrayLayer = copyInfo.baseArrayLayer;
+			copy.imageSubresource.layerCount = copyInfo.layerCount;
+
+			copy.imageExtent = { copyInfo.extent.width, copyInfo.extent.height, copyInfo.extent.depth };
+			copy.imageOffset = { copyInfo.offset.x, copyInfo.offset.y, copyInfo.offset.z };
+
+
+			vkCmdCopyBufferToImage(m_Buffer, buffer->m_Buffer, texture->m_Image, texture->m_Layout, 1, &copy);
+
+		}
+
+		void CommandList::CopyBuffer(Buffer* src, Buffer* dst, size_t size, size_t srcOffset, size_t dstOffset)
+		{
+			VkBufferCopy copy{};
+			copy.size = size;
+			copy.dstOffset = dstOffset;
+			copy.srcOffset = srcOffset;
+
+			vkCmdCopyBuffer(m_Buffer, src->m_Buffer, dst->m_Buffer, 1, &copy);
+		}
 	}
 }

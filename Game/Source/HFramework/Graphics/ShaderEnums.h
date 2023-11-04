@@ -21,4 +21,17 @@ namespace hf
 		Front, 
 		Back
 	};
+
+
+	enum class FilterMode
+	{
+		Linear,
+		Nearest
+	};
+
+	enum class WrapMode
+	{
+		Repeat, 
+		ClampToEdge
+	};
 }
