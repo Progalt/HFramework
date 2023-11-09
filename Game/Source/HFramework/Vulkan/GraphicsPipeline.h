@@ -26,10 +26,16 @@ namespace hf
 			uint32_t offset;
 		};
 
+		enum InputRate
+		{
+			Vertex, 
+			Instance
+		};
+
 		struct VertexInput
 		{
 			VertexInput() : binding(0), stride(0) { }
-			VertexInput(uint32_t binding, uint32_t stride) : binding(binding), stride(stride) { }
+			VertexInput(uint32_t binding, uint32_t stride, InputRate inputRate = InputRate::Vertex) : binding(binding), stride(stride), inputRate(inputRate) { }
 
 			VertexInput& AddAttribute(VertexAttribute attr)
 			{
@@ -40,7 +46,14 @@ namespace hf
 
 			uint32_t binding;
 			uint32_t stride;
+			InputRate inputRate;
 			std::vector<VertexAttribute> attributes;
+		};
+
+		struct PushConstantRange
+		{
+			uint32_t offset;
+			uint32_t size;
 		};
 
 		struct GraphicsPipelineDesc
@@ -50,6 +63,7 @@ namespace hf
 			std::vector<VertexInput> vertexLayout = {};
 
 			std::vector<DescriptorSetLayout> setLayouts = {};
+			std::unordered_map<ShaderStage, PushConstantRange> pushConstantRanges = {};
 
 			std::vector<Format> colourTargetFormats;
 			Format depthTargetFormat = Format::None;

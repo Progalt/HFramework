@@ -137,6 +137,8 @@
   <ItemGroup>
     <ClCompile Include="Source\HFramework\Core\EventHandler.cpp" />
     <ClCompile Include="Source\HFramework\Core\Window.cpp" />
+    <ClCompile Include="Source\HFramework\Graphics\Renderer.cpp" />
+    <ClCompile Include="Source\HFramework\Graphics\Vulkan\RendererVk.cpp" />
     <ClCompile Include="Source\HFramework\Vulkan\CommandList.cpp" />
     <ClCompile Include="Source\HFramework\Vulkan\DescriptorSet.cpp" />
     <ClCompile Include="Source\HFramework\Vulkan\DescriptorSetAllocator.cpp" />
@@ -150,6 +152,7 @@
     <ClCompile Include="Source\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\FPSCamera.h" />
     <ClInclude Include="Source\HFramework\Core\Application.h" />
     <ClInclude Include="Source\HFramework\Core\EventHandler.h" />
     <ClInclude Include="Source\HFramework\Core\KeyCodes.h" />
@@ -158,9 +161,11 @@
     <ClInclude Include="Source\HFramework\Core\Rect.h" />
     <ClInclude Include="Source\HFramework\Core\Util.h" />
     <ClInclude Include="Source\HFramework\Core\Window.h" />
+    <ClInclude Include="Source\HFramework\Graphics\CommandEncoder.h" />
     <ClInclude Include="Source\HFramework\Graphics\Format.h" />
     <ClInclude Include="Source\HFramework\Graphics\Renderer.h" />
     <ClInclude Include="Source\HFramework\Graphics\ShaderEnums.h" />
+    <ClInclude Include="Source\HFramework\Graphics\Vulkan\RendererVk.h" />
     <ClInclude Include="Source\HFramework\HFramework.h" />
     <ClInclude Include="Source\HFramework\SceneGraph\Node.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Buffer.h" />

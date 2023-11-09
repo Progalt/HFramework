@@ -9,6 +9,12 @@ namespace hf
 		Compute
 	};
 
+	enum class IndexType
+	{
+		Uint16, 
+		Uint32
+	};
+
 	enum class TopologyMode
 	{
 		Triangles,

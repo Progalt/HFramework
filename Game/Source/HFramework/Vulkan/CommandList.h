@@ -26,12 +26,6 @@ namespace hf
 
 		};
 
-		enum class IndexType
-		{
-			Uint16, 
-			Uint32
-		};
-
 		enum class LoadOp
 		{
 			Clear,
@@ -69,6 +63,7 @@ namespace hf
 		{
 			std::vector<Attachment> colourAttachments;
 			Attachment depthAttachment;
+			bool useSecondaryListsForRendering = false;
 
 		};
 
@@ -93,11 +88,12 @@ namespace hf
 			} extent;
 		};
 
+
 		class CommandList
 		{
 		public:
 
-			void Begin();
+			void Begin(RenderpassInfo* inheritanceInfo = nullptr);
 
 			void End();
 
@@ -113,9 +109,10 @@ namespace hf
 
 			/* -- Drawing Functions -- */
 
-			void Draw(uint32_t vertexCount, uint32_t firstVertex);
+			void Draw(uint32_t vertexCount, uint32_t firstVertex, uint32_t instanceCount = 1, uint32_t firstInstance = 0);
 
-			void DrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex = 0);
+			void DrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex = 0, uint32_t instanceCount = 1, uint32_t firstInstance = 0);
+
 
 			/* -- Binding Functions -- */
 
@@ -134,6 +131,8 @@ namespace hf
 
 			void CopyBuffer(Buffer* src, Buffer* dst, size_t size, size_t srcOffset = 0, size_t dstOffset = 0);
 
+			void ExecuteCommandList(CommandList* list);
+
 		private:
 
 			VkFence m_FinishedExecution;
@@ -148,8 +147,10 @@ namespace hf
 
 			GraphicsPipeline* m_CurrentGraphicsPipeline = nullptr;
 			
-
+			bool m_Secondary = false;
 			bool m_SingleUse = false;
+
+			std::vector<CommandList*> m_SecondaryCommandLists;
 		};
 	}
 }

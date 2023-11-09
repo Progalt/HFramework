@@ -7,7 +7,7 @@ namespace hf
 {
 	namespace vulkan
 	{
-		void CommandList::Begin()
+		void CommandList::Begin(RenderpassInfo* info)
 		{
 			if (m_FinishedExecution)
 			{
@@ -20,12 +20,56 @@ namespace hf
 				beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 			else 
 				beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-			beginInfo.pInheritanceInfo = nullptr;
+
+			VkCommandBufferInheritanceInfo inheritanceInfo{};
+			inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+			VkCommandBufferInheritanceRenderingInfo inheritanceRenderingInfo{};
+			inheritanceRenderingInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO;
+			std::vector<VkFormat> colourFormats{};
+
+			if (m_Secondary)
+			{
+				beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+
+				if (info == nullptr)
+					Log::Fatal("Secondary Command Lists Require inheritance Info passed by RenderPassInfo struct");
+
+				if (!info->useSecondaryListsForRendering)
+					Log::Fatal("Current Renderpass is not setup for secondary command list rendering");
+
+				inheritanceInfo.renderPass = VK_NULL_HANDLE;
+				inheritanceInfo.framebuffer = VK_NULL_HANDLE;
+
+				
+
+				for (auto& colourAttachment : info->colourAttachments)
+					colourFormats.push_back(colourAttachment.texture->m_Format);
+
+				inheritanceRenderingInfo.colorAttachmentCount = colourFormats.size();
+				inheritanceRenderingInfo.pColorAttachmentFormats = colourFormats.data();
+
+				if (info->depthAttachment.texture)
+					inheritanceRenderingInfo.depthAttachmentFormat = info->depthAttachment.texture->m_Format;
+				
+				inheritanceRenderingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+				inheritanceRenderingInfo.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+				inheritanceRenderingInfo.viewMask = 0;
+
+				inheritanceInfo.pNext = &inheritanceRenderingInfo;
+				beginInfo.pInheritanceInfo = &inheritanceInfo;
+			}
+			else
+			{
+				beginInfo.pInheritanceInfo = nullptr;
+			}
+
 
 			if (vkBeginCommandBuffer(m_Buffer, &beginInfo) != VK_SUCCESS)
 			{
 				Log::Fatal("Failed to begin command list");
 			}
+
+			m_SecondaryCommandLists.clear();
 
 		}
 
@@ -95,6 +139,9 @@ namespace hf
 
 			renderInfo.colorAttachmentCount = colourAttachmentInfos.size();
 			renderInfo.pColorAttachments = colourAttachmentInfos.data();
+
+			if (renderpassInfo.useSecondaryListsForRendering)
+				renderInfo.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
 
 			vkCmdBeginRendering(m_Buffer, &renderInfo);
 
@@ -178,14 +225,14 @@ namespace hf
 			vkCmdBindDescriptorSets(m_Buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_CurrentGraphicsPipeline->m_Layout, firstSet, s.size(), s.data(), 0, nullptr);
 		}
 
-		void CommandList::Draw(uint32_t vertexCount, uint32_t firstVertex)
+		void CommandList::Draw(uint32_t vertexCount, uint32_t firstVertex, uint32_t instanceCount, uint32_t firstInstance )
 		{
-			vkCmdDraw(m_Buffer, vertexCount, 1, firstVertex, 0);
+			vkCmdDraw(m_Buffer, vertexCount, instanceCount, firstVertex, firstInstance);
 		}
 
-		void CommandList::DrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
+		void CommandList::DrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex, uint32_t instanceCount, uint32_t firstInstance)
 		{
-			vkCmdDrawIndexed(m_Buffer, indexCount, 1, firstIndex, firstVertex, 0);
+			vkCmdDrawIndexed(m_Buffer, indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
 		}
 
 		void CommandList::ResourceBarrier(Texture* texture, ImageLayout newLayout)
@@ -280,6 +327,15 @@ namespace hf
 			copy.srcOffset = srcOffset;
 
 			vkCmdCopyBuffer(m_Buffer, src->m_Buffer, dst->m_Buffer, 1, &copy);
+		}
+
+		void CommandList::ExecuteCommandList(CommandList* list)
+		{
+			VkCommandBuffer cmd = list->m_Buffer;
+
+			vkCmdExecuteCommands(m_Buffer, 1, &cmd);
+
+			m_SecondaryCommandLists.push_back(list);
 		}
 	}
 }

@@ -59,6 +59,7 @@ namespace hf
 		{
 			vkUpdateDescriptorSets(m_Device->m_Device, m_Writes.size(), m_Writes.data(), 0, nullptr);
 
+			m_Writes.clear();
 			m_BufferInfo.clear();
 			m_ImageInfo.clear();
 		}

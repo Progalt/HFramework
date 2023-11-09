@@ -33,5 +33,20 @@ namespace hf
 				return (min == rh.min && mag == rh.mag && wrapU == rh.wrapU && wrapV == rh.wrapV && wrapW == rh.wrapW && maxAnisotropy == rh.maxAnisotropy);
 			}
 		};
+
+		struct SamplerStateHash
+		{
+			size_t operator()(const SamplerState& state) const
+			{
+				size_t hash = 0;
+				hash_combine(hash, state.min);
+				hash_combine(hash, state.mag);
+				hash_combine(hash, state.wrapU);
+				hash_combine(hash, state.wrapV);
+				hash_combine(hash, state.wrapW);
+				hash_combine(hash, state.maxAnisotropy);
+				return hash;
+			}
+		};
 	}
 }

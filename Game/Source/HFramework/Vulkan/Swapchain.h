@@ -53,6 +53,13 @@ namespace hf
 				return FromVulkan(m_Images[0].m_Format);
 			}
 
+			bool IsAssociatedWithWindow(Window* win)
+			{
+				if (win == m_AssociatedWindow)
+					return true;
+
+				return false;
+			}
 
 
 		private:

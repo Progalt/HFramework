@@ -45,6 +45,8 @@ namespace hf
 			vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
 
 			m_SupportedFeatures.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+
+			m_SupportedFeatures.Print();
 		}
 
 		void Device::Dispose()
@@ -199,6 +201,9 @@ namespace hf
 				CommandList& cmdList = cmdLists[i];
 				cmdList.m_Device = m_Device;
 
+				if (level & VK_COMMAND_BUFFER_LEVEL_SECONDARY)
+					cmdList.m_Secondary = true;
+
 				if (vkAllocateCommandBuffers(m_Device, &allocInfo, &cmdList.m_Buffer) != VK_SUCCESS)
 				{
 					Log::Fatal("Failed to allocate command lists");
@@ -311,6 +316,11 @@ namespace hf
 				// We need to grab the command list for the current frame
 
 				cmd->m_FinishedExecution = signalFence;
+
+				// The reason we do this is so secondary command lists 
+				// also wait on the execution being finished because they could be rerecorded before the main command list 
+				for (auto& secondaryCmd : cmd->m_SecondaryCommandLists)
+					secondaryCmd->m_FinishedExecution = signalFence;
 
 				buffers[i] = cmd->m_Buffer;
 				i++;

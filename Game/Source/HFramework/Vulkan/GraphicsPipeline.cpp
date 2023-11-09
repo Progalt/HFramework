@@ -96,7 +96,7 @@ namespace hf
 				VkVertexInputBindingDescription bindingDescription{};
 				bindingDescription.binding = binding.binding;
 				bindingDescription.stride = binding.stride;
-				bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+				bindingDescription.inputRate = (binding.inputRate == InputRate::Vertex) ? VK_VERTEX_INPUT_RATE_VERTEX : VK_VERTEX_INPUT_RATE_INSTANCE;
 
 				inputBindingDescs.push_back(bindingDescription);
 
@@ -240,8 +240,30 @@ namespace hf
 			pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			pipelineLayoutInfo.setLayoutCount = setLayouts.size();
 			pipelineLayoutInfo.pSetLayouts = setLayouts.data();
-			pipelineLayoutInfo.pushConstantRangeCount = 0;
-			pipelineLayoutInfo.pPushConstantRanges = nullptr;
+
+			std::vector<VkPushConstantRange> pushConstants{};
+
+			for (auto& range : desc.pushConstantRanges)
+			{
+				VkPushConstantRange r;
+				r.size = range.second.size;
+				r.offset = range.second.offset;
+
+				switch (range.first)
+				{
+				case ShaderStage::Vertex:
+					r.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+					break;
+				case ShaderStage::Fragment:
+					r.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+					break;
+				}
+
+				pushConstants.push_back(r);
+			}
+
+			pipelineLayoutInfo.pushConstantRangeCount = pushConstants.size();
+			pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
 
 			if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_Layout) != VK_SUCCESS)
 			{

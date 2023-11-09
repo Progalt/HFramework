@@ -54,6 +54,12 @@
     <ClCompile Include="Source\HFramework\Vulkan\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\HFramework\Graphics\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\HFramework\Graphics\Vulkan\RendererVk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\HFramework\Core\Application.h">
@@ -137,10 +143,19 @@
     <ClInclude Include="Source\HFramework\SceneGraph\Node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\HFramework\Vulkan\SamplerState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Source\HFramework\Graphics\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\HFramework\Vulkan\SamplerState.h">
+    <ClInclude Include="Source\HFramework\Graphics\Vulkan\RendererVk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FPSCamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\HFramework\Graphics\CommandEncoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

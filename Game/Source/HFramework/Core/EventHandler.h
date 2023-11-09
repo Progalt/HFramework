@@ -2,6 +2,8 @@
 #include "Window.h"
 #include <unordered_map>
 #include "KeyCodes.h"
+#include <queue>
+#include <glm/glm.hpp>
 
 namespace hf
 {
@@ -43,7 +45,27 @@ namespace hf
 	{
 	public:
 
+		static void LockMouse(bool lock)
+		{
+			SDL_SetRelativeMouseMode((SDL_bool)lock);
+		}
+
+		static glm::uvec2 GetPosition()  
+		{
+			return m_CurrentPosition;
+		}
+
+		static glm::ivec2 GetRelativeMotion()
+		{
+			return m_RelativeMotion;
+		}
+
 	private:
+
+		friend class EventHandler;
+
+		static glm::uvec2 m_CurrentPosition;
+		static glm::ivec2 m_RelativeMotion;
 	};
 
 	class EventHandler
@@ -53,6 +75,16 @@ namespace hf
 		void HandleGlobalEvents()
 		{
 			SDL_Event evnt;
+
+			// Reset pressed keys
+
+			while (!m_PressedLastFrame.empty())
+			{
+				Keyboard::m_KeyStates[(int)m_PressedLastFrame.front()].pressed = false;
+				m_PressedLastFrame.pop();
+			}
+
+			Mouse::m_RelativeMotion = { 0, 0 };
 
 			while (SDL_PollEvent(&evnt))
 			{
@@ -68,14 +100,27 @@ namespace hf
 				switch (evnt.type)
 				{
 				case SDL_KEYDOWN:
+					Keyboard::m_KeyStates[(int)FromSDL2Scancode(evnt.key.keysym.scancode)].held = true;
+					Keyboard::m_KeyStates[(int)FromSDL2Scancode(evnt.key.keysym.scancode)].pressed = true;
+					m_PressedLastFrame.push(FromSDL2Scancode(evnt.key.keysym.scancode));
 					break;
 				case SDL_KEYUP:
+					Keyboard::m_KeyStates[(int)FromSDL2Scancode(evnt.key.keysym.scancode)].held = false;
 					break;
 				case SDL_MOUSEBUTTONDOWN:
 					break;
 				case SDL_MOUSEBUTTONUP:
 					break;
 				case SDL_MOUSEMOTION:
+				{
+					Mouse::m_CurrentPosition.x = evnt.motion.x;
+					Mouse::m_CurrentPosition.y = evnt.motion.y;
+
+					Mouse::m_RelativeMotion.x = evnt.motion.xrel;
+					Mouse::m_RelativeMotion.y = evnt.motion.yrel;
+
+				
+				}
 					break;
 				case SDL_MOUSEWHEEL:
 					break;
@@ -99,6 +144,8 @@ namespace hf
 			m_Windows[window->GetWindowID()] = window;
 		}
 	private:
+
+		std::queue<KeyCode> m_PressedLastFrame;
 
 		std::unordered_map<uint32_t, Window*> m_Windows;
 

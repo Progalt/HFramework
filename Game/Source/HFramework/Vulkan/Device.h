@@ -39,6 +39,12 @@ namespace hf
 		struct SupportedFeatures
 		{
 			float maxAnisotropy;
+
+			void Print()
+			{
+				Log::Info("Device Supported Features:");
+				Log::Info(" - Max Anisotropy: %.4f", maxAnisotropy);
+			}
 		};
 
 		class Device
@@ -136,21 +142,6 @@ namespace hf
 			DescriptorSetAllocator m_SetAllocator;
 
 			VkDescriptorSetLayout GetSetLayout(DescriptorSetLayout& layout);
-
-			struct SamplerStateHash
-			{
-				size_t operator()(const SamplerState& state) const
-				{
-					size_t hash = 0;
-					hash_combine(hash, state.min);
-					hash_combine(hash, state.mag);
-					hash_combine(hash, state.wrapU);
-					hash_combine(hash, state.wrapV);
-					hash_combine(hash, state.wrapW);
-					hash_combine(hash, state.maxAnisotropy);
-					return hash;
-				}
-			};
 
 			std::unordered_map<SamplerState, VkSampler, SamplerStateHash> m_Samplers;
 
