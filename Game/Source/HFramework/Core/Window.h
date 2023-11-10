@@ -125,6 +125,8 @@ namespace hf
 		HWND GetHWND();
 #endif
 
+		void SetUseDarkMode(bool darkMode);
+
 	private:
 
 		std::function<void(SDL_Event*)> m_EventCallback;

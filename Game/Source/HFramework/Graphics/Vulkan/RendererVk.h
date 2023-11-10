@@ -28,6 +28,13 @@ namespace hf
 		hf::vulkan::Swapchain m_Swapchain;
 		hf::vulkan::Surface m_Surface;
 
+		struct WindowData
+		{
+			hf::vulkan::Surface surface;
+			hf::vulkan::Swapchain swapchain;
+		};
+
+		std::unordered_map<Window*, WindowData> m_WindowData;
 
 		std::vector<hf::vulkan::CommandList> m_BaseCommandLists;
 

@@ -382,4 +382,28 @@ namespace hf
 	}
 #endif
 
+
+	void Window::SetUseDarkMode(bool darkMode)
+	{
+#ifdef HF_PLATFORM_WINDOWS
+
+		HWND hwnd = GetHWND();
+		BOOL useDarkMode = darkMode;
+		BOOL succeeded = SUCCEEDED(DwmSetWindowAttribute(
+			hwnd, DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE,
+			&useDarkMode, sizeof(useDarkMode)));
+
+		if (!succeeded)
+			Log::Warn("Failed to Set dark mode");
+		else
+			Log::Info("Set dark mode setting for window");
+
+		// This causes the window to redraw
+		SDL_HideWindow(m_Window);
+		SDL_ShowWindow(m_Window);
+#else
+		Log::Warn("Window Manager Does not support the setting of dark mode so it has not been attempted");
+#endif
+	}
+
 }

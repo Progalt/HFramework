@@ -38,6 +38,8 @@ public:
 
 	void Start() override
 	{
+		GetMainWindow()->SetUseDarkMode(true);
+
 		renderer = hf::Renderer::CreateRenderer(GetMainWindow());
 
 
