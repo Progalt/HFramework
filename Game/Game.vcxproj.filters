@@ -164,6 +164,12 @@
     <ClInclude Include="Source\HFramework\Vulkan\Surface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\HFramework\Canvas\Canvas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\HFramework\Graphics\Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shaders\base.glsl.vert" />

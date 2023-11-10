@@ -153,6 +153,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\FPSCamera.h" />
+    <ClInclude Include="Source\HFramework\Canvas\Canvas.h" />
     <ClInclude Include="Source\HFramework\Core\Application.h" />
     <ClInclude Include="Source\HFramework\Core\EventHandler.h" />
     <ClInclude Include="Source\HFramework\Core\GUIApplication.h" />
@@ -162,6 +163,7 @@
     <ClInclude Include="Source\HFramework\Core\Rect.h" />
     <ClInclude Include="Source\HFramework\Core\Util.h" />
     <ClInclude Include="Source\HFramework\Core\Window.h" />
+    <ClInclude Include="Source\HFramework\Graphics\Buffer.h" />
     <ClInclude Include="Source\HFramework\Graphics\CommandEncoder.h" />
     <ClInclude Include="Source\HFramework\Graphics\Format.h" />
     <ClInclude Include="Source\HFramework\Graphics\Renderer.h" />

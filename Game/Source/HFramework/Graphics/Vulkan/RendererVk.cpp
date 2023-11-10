@@ -15,53 +15,67 @@ namespace hf
 
 		m_Device.Create(deviceInfo);
 
-		m_Surface = m_Device.CreateSurface(window);
+		m_WindowData[window];
+		WindowData& windowData = m_WindowData[window];
 
-		m_Swapchain = m_Device.CreateSwapchain(&m_Surface);
+		windowData.surface = m_Device.CreateSurface(window);
 
-		m_BaseCommandLists = m_Device.AllocateCommandLists(hf::vulkan::Queue::Graphics, hf::vulkan::CommandListType::Primary, m_Swapchain.GetImageCount());
-		m_WorkFinished = m_Device.CreateSemaphores(m_Swapchain.GetImageCount());
-		m_ImageAvailable = m_Device.CreateSemaphores(m_Swapchain.GetImageCount());
+		windowData.swapchain = m_Device.CreateSwapchain(&windowData.surface);
+
+		windowData.baseCommandLists = m_Device.AllocateCommandLists(hf::vulkan::Queue::Graphics, hf::vulkan::CommandListType::Primary, windowData.swapchain.GetImageCount());
+		windowData.imageAvailable = m_Device.CreateSemaphores(windowData.swapchain.GetImageCount());
+		windowData.workFinished = m_Device.CreateSemaphores(windowData.swapchain.GetImageCount());
 	}
 
 	void RendererVk::Destroy()
 	{
 
 
-		for (auto& semaphore : m_ImageAvailable)
-			semaphore.Dispose();
-
-		for (auto& semaphore : m_WorkFinished)
-			semaphore.Dispose();
 
 		
+		for (auto& [wnd, data] : m_WindowData)
+		{
+			data.swapchain.Dispose();
+			data.surface.Dispose();
+			
 
-		m_Swapchain.Dispose();
-		m_Surface.Dispose();
+			for (auto& semaphore : data.imageAvailable)
+				semaphore.Dispose();
+
+			for (auto& semaphore : data.workFinished)
+				semaphore.Dispose();
+		}
+
 		m_Device.Dispose();
 	}
 
-	hf::vulkan::CommandList& RendererVk::GetCurrentFrameCmdList()
+	hf::vulkan::CommandList& RendererVk::GetCurrentFrameCmdList(Window* window)
 	{
-		return m_BaseCommandLists[m_CurrentFrameIndex];
+		WindowData& windowData = m_WindowData[window];
+
+		return windowData.baseCommandLists[windowData.currentFrameIndex];
 	}
 
-	bool RendererVk::BeginFrame()
+	bool RendererVk::BeginFrame(Window* window)
 	{
-		m_CurrentFrameIndex = m_Swapchain.GetCurrentImageIndex();
+		WindowData& windowData = m_WindowData[window];
 
-		if (!m_Swapchain.AquireNextFrame(&m_ImageAvailable[m_CurrentFrameIndex]))
+		windowData.currentFrameIndex = windowData.swapchain.GetCurrentImageIndex();
+
+		if (!windowData.swapchain.AquireNextFrame(&windowData.imageAvailable[windowData.currentFrameIndex]))
 			return false;
 
 		return true;
 
 	}
 
-	void RendererVk::EndFrame()
+	void RendererVk::EndFrame(Window* window)
 	{
-		m_Device.QueueSubmit(hf::vulkan::Queue::Graphics, { &GetCurrentFrameCmdList() }, &m_ImageAvailable[m_CurrentFrameIndex], &m_WorkFinished[m_CurrentFrameIndex]);
+		WindowData& windowData = m_WindowData[window];
 
-		m_Swapchain.Present(&m_WorkFinished[m_CurrentFrameIndex]);
+		m_Device.QueueSubmit(hf::vulkan::Queue::Graphics, { &GetCurrentFrameCmdList(window) }, &windowData.imageAvailable[windowData.currentFrameIndex], &windowData.workFinished[windowData.currentFrameIndex]);
+
+		windowData.swapchain.Present(&windowData.workFinished[windowData.currentFrameIndex]);
 	}
 
 	void RendererVk::WaitIdle()

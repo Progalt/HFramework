@@ -8,6 +8,14 @@
 namespace hf
 {
 
+	enum class MouseButton
+	{
+		Left,
+		Middle,
+		Right,
+		__Count
+	};
+
 	struct ButtonState
 	{
 		bool held;			// This is true while the key is down. Which could be for 1 or 20 frames or more. This would be used for movement input or similar
@@ -60,12 +68,24 @@ namespace hf
 			return m_RelativeMotion;
 		}
 
+		static bool IsButtonHeld(MouseButton button)
+		{
+			return m_MouseButtonStates[(int)button].held;
+		}
+
+		static bool WasButtonPressed(MouseButton button)
+		{
+			return m_MouseButtonStates[(int)button].pressed;
+		}
+
 	private:
 
 		friend class EventHandler;
 
 		static glm::uvec2 m_CurrentPosition;
 		static glm::ivec2 m_RelativeMotion;
+
+		static ButtonState m_MouseButtonStates[(int)MouseButton::__Count];
 	};
 
 	class EventHandler

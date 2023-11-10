@@ -13,9 +13,9 @@ namespace hf
 
 		static void DestroyRenderer(Renderer* renderer);
 
-		virtual bool BeginFrame() = 0;
+		virtual bool BeginFrame(Window* window) = 0;
 
-		virtual void EndFrame() = 0;
+		virtual void EndFrame(Window* window) = 0;
 
 		
 		virtual void AddRenderpass(std::function<void(CommandEncoder&)> func) = 0;

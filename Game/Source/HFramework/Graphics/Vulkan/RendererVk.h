@@ -15,33 +15,37 @@ namespace hf
 
 		void WaitIdle();
 
-		bool BeginFrame() override;
+		bool BeginFrame(Window* window) override;
 
-		void EndFrame() override;
+		void EndFrame(Window* window) override;
 
 		void AddRenderpass(std::function<void(CommandEncoder&)> func) override;
 
-		hf::vulkan::CommandList& GetCurrentFrameCmdList();
+		hf::vulkan::CommandList& GetCurrentFrameCmdList(Window* window);
 
 
 		hf::vulkan::Device m_Device;
-		hf::vulkan::Swapchain m_Swapchain;
-		hf::vulkan::Surface m_Surface;
 
 		struct WindowData
 		{
 			hf::vulkan::Surface surface;
 			hf::vulkan::Swapchain swapchain;
+			uint32_t currentFrameIndex = 0;
+
+			std::vector<hf::vulkan::Semaphore> workFinished;
+			std::vector<hf::vulkan::Semaphore> imageAvailable;
+
+			std::vector<hf::vulkan::CommandList> baseCommandLists;
 		};
 
 		std::unordered_map<Window*, WindowData> m_WindowData;
 
-		std::vector<hf::vulkan::CommandList> m_BaseCommandLists;
+		WindowData& GetWindowData(Window* wnd)
+		{
+			return m_WindowData[wnd];
+		}
 
-		std::vector<hf::vulkan::Semaphore> m_WorkFinished;
-		std::vector<hf::vulkan::Semaphore> m_ImageAvailable;
 
-		uint32_t m_CurrentFrameIndex = 0;
 
 
 		struct RenderPass

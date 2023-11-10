@@ -7,4 +7,6 @@ namespace hf
 
 	glm::uvec2 Mouse::m_CurrentPosition;
 	glm::ivec2 Mouse::m_RelativeMotion;
+
+	ButtonState Mouse::m_MouseButtonStates[(int)MouseButton::__Count];
 }

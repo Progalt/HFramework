@@ -48,7 +48,7 @@ public:
 		layout1.AddTextureSampler(hf::ShaderStage::Fragment, 1, 1);
 
 		hf::vulkan::GraphicsPipelineDesc pipelineDesc{};
-		pipelineDesc.colourTargetFormats = { ((hf::RendererVk*)renderer)->m_Swapchain.GetImageFormat() };
+		pipelineDesc.colourTargetFormats = { ((hf::RendererVk*)renderer)->GetWindowData(GetMainWindow()).swapchain.GetImageFormat() };
 		pipelineDesc.shaders[hf::ShaderStage::Vertex].bytecode = readFile("Assets/Shaders/base.vert.spv");
 		pipelineDesc.shaders[hf::ShaderStage::Fragment].bytecode = readFile("Assets/Shaders/base.frag.spv");
 		pipelineDesc.topologyMode = hf::TopologyMode::Triangles;
@@ -56,7 +56,7 @@ public:
 		pipelineDesc.setLayouts = { layout1 };
 
 		pipelineDesc.vertexLayout.push_back(
-			hf::vulkan::VertexInput(0, sizeof(Vertex))
+			hf::vulkan::VertexInput(0, sizeof(Vertex)) 
 			.AddAttribute(hf::vulkan::VertexAttribute(0, hf::Format::RGB32F, 0))
 			.AddAttribute(hf::vulkan::VertexAttribute(1, hf::Format::RGBA32F, 3 * sizeof(float)))
 			.AddAttribute(hf::vulkan::VertexAttribute(2, hf::Format::RG32F, 7 * sizeof(float)))
@@ -180,7 +180,7 @@ public:
 		staging.Dispose();
 		imgStaging.Dispose();
 
-		nestedCmds = ((hf::RendererVk*)renderer)->m_Device.AllocateCommandLists(hf::vulkan::Queue::Graphics, hf::vulkan::CommandListType::Secondary, ((hf::RendererVk*)renderer)->m_Swapchain.GetImageCount());
+	
 	}
 
 	glm::mat4 proj;
@@ -208,12 +208,18 @@ public:
 	{
 		
 		
-		if (!renderer->BeginFrame())
+		if (!renderer->BeginFrame(GetMainWindow()))
 			return;
 
-		hf::vulkan::CommandList& nestedCmd = nestedCmds[((hf::RendererVk*)renderer)->m_CurrentFrameIndex];
+		hf::vulkan::Texture* backbuffer = ((hf::RendererVk*)renderer)->GetWindowData(GetMainWindow()).swapchain.GetSwapchainImage();
 
-		hf::vulkan::Texture* backbuffer = ((hf::RendererVk*)renderer)->m_Swapchain.GetSwapchainImage();
+	
+
+
+		hf::vulkan::CommandList& cmdList = ((hf::RendererVk*)renderer)->GetCurrentFrameCmdList(GetMainWindow());
+
+		cmdList.Begin();
+
 
 		hf::vulkan::Attachment attachment{};
 		attachment.texture = backbuffer;
@@ -223,34 +229,21 @@ public:
 
 		hf::vulkan::RenderpassInfo rpInfo{};
 		rpInfo.colourAttachments = { attachment };
-		rpInfo.useSecondaryListsForRendering = true;
-
-		nestedCmd.Begin(&rpInfo);
-
-		nestedCmd.SetViewport(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
-		nestedCmd.SetScissor(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
-
-		nestedCmd.BindPipeline(&graphicsPipeline);
-
-		nestedCmd.BindDescriptorSets({ &descriptorSet }, 0);
-
-		nestedCmd.BindVertexBuffer(&vertexBuffer, 0);
-		nestedCmd.BindIndexBuffer(&indexBuffer, hf::IndexType::Uint16);
-
-		nestedCmd.DrawIndexed(6, 0);
-
-		nestedCmd.End();
-
-		hf::vulkan::CommandList& cmdList = ((hf::RendererVk*)renderer)->GetCurrentFrameCmdList();
-
-		cmdList.Begin();
-
-
-
 		cmdList.BeginRenderpass(rpInfo);
 
 
-		cmdList.ExecuteCommandList(&nestedCmd);
+
+		cmdList.SetViewport(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
+		cmdList.SetScissor(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
+
+		cmdList.BindPipeline(&graphicsPipeline);
+
+		cmdList.BindDescriptorSets({ &descriptorSet }, 0);
+
+		cmdList.BindVertexBuffer(&vertexBuffer, 0);
+		cmdList.BindIndexBuffer(&indexBuffer, hf::IndexType::Uint16);
+
+		cmdList.DrawIndexed(6, 0);
 
 		cmdList.EndRenderpass();
 
@@ -258,7 +251,7 @@ public:
 
 		cmdList.End();
 
-		renderer->EndFrame();
+		renderer->EndFrame(GetMainWindow());
 
 	}
 
@@ -288,7 +281,6 @@ public:
 	hf::vulkan::DescriptorSet descriptorSet;
 	hf::vulkan::Texture testTexture;
 
-	std::vector<hf::vulkan::CommandList> nestedCmds;
 
 	hf::vulkan::GraphicsPipeline graphicsPipeline;
 
