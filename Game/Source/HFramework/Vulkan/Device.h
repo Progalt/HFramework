@@ -10,6 +10,7 @@
 #include "DescriptorSetAllocator.h"
 #include "DescriptorSet.h"
 #include "SamplerState.h"
+#include "Surface.h"
 
 namespace hf
 {
@@ -54,7 +55,9 @@ namespace hf
 			void Create(const DeviceCreateInfo& deviceInfo);
 			void Dispose();
 
-			Swapchain CreateSwapchain(bool vsync = false);
+			Surface CreateSurface(Window* window);
+
+			Swapchain CreateSwapchain(Surface* surface, bool vsync = false);
 			
 			std::vector<CommandList> AllocateCommandLists(Queue queue, CommandListType type, uint32_t count);
 
@@ -102,10 +105,7 @@ namespace hf
 
 			VmaAllocator m_Allocator;
 
-			VkSurfaceKHR m_Surface;
-
 			VkQueue m_GraphicsQueue;
-			VkQueue m_PresentQueue;
 			VkQueue m_TransferQueue;
 			VkQueue m_ComputeQueue;
 

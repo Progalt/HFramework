@@ -214,7 +214,7 @@ namespace hf
 			}
 			else
 			{
-				Log::Info("Device Queue Family Count: %d", queueFamilyCount);
+				Log::Info("Device Queue Family Count: %d", queueFamilyCount); 
 			}
 
 
@@ -228,8 +228,7 @@ namespace hf
 
 			for (uint32_t i = 0; i < queueFamilyCount; i++)
 			{
-				VkBool32 presentSupport = false;
-				vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, m_Surface, &presentSupport);
+
 
 				if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && !foundTransferQueueFamily)
 				{
@@ -256,25 +255,13 @@ namespace hf
 					m_TransferQueueFamily = i;
 				}
 
-				if (presentSupport && !foundPresentQueueFamily)
-				{
-					m_PresentQueueFamily = i;
-					foundPresentQueueFamily = true;
-				}
-
 
 			}
 
 			if (foundGraphicsQueueFamily)
 			{
 
-				if (foundPresentQueueFamily)
-				{
-				}
-				else
-				{
-					Log::Fatal("Failed to find queue that supports present");
-				}
+				
 			}
 			else
 			{
@@ -360,7 +347,6 @@ namespace hf
 			}
 
 			vkGetDeviceQueue(m_Device, m_GraphicsQueueFamily, 0, &m_GraphicsQueue);
-			vkGetDeviceQueue(m_Device, m_PresentQueueFamily, 0, &m_PresentQueue);
 			vkGetDeviceQueue(m_Device, m_TransferQueueFamily, 0, &m_TransferQueue);
 			vkGetDeviceQueue(m_Device, m_ComputeQueueFamily, 0, &m_ComputeQueue);
 

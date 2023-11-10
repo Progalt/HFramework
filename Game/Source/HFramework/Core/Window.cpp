@@ -192,7 +192,7 @@ namespace hf
 
 		m_Width = static_cast<uint32_t>(w);
 		m_Height = static_cast<uint32_t>(h);
-
+		m_WindowTitle = title;
 		m_IsOpen = true;
 
 		// Set the current context as current

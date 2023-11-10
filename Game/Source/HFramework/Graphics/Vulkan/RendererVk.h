@@ -26,6 +26,8 @@ namespace hf
 
 		hf::vulkan::Device m_Device;
 		hf::vulkan::Swapchain m_Swapchain;
+		hf::vulkan::Surface m_Surface;
+
 
 		std::vector<hf::vulkan::CommandList> m_BaseCommandLists;
 

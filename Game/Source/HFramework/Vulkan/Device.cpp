@@ -15,8 +15,6 @@ namespace hf
 
 			SelectPhysicalDevice();
 
-			m_Surface = deviceInfo.window->GetVulkanSurface(m_Instance);
-
 			FindQueueFamilies();
 
 			CreateDevice();
@@ -75,8 +73,6 @@ namespace hf
 
 			vkDestroyDevice(m_Device, nullptr);
 
-			vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
-
 			if (m_Debug)
 			{
 				vkDestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
@@ -85,14 +81,46 @@ namespace hf
 			vkDestroyInstance(m_Instance, nullptr);
 		}
 
-		Swapchain Device::CreateSwapchain(bool vsync)
+		Surface Device::CreateSurface(Window* window)
+		{
+			Surface surf;
+			surf.m_AssociatedInstance = m_Instance;
+			surf.m_Surface = window->GetVulkanSurface(m_Instance);
+			surf.m_AssociatedPhysicalDevice = m_PhysicalDevice;
+			surf.m_AssociatedWindow = window;
+			
+			uint32_t queueFamilyCount = 0;
+			vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, nullptr);
+			for (uint32_t i = 0; i < queueFamilyCount; i++)
+			{
+				VkBool32 presentSupport = false;
+				vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, surf.m_Surface, &presentSupport);
+
+				// TODO: this could probably query more about the queue
+				// For now just get the first that supports present
+				if (presentSupport)
+				{
+					surf.m_SupportsPresent = presentSupport;
+					surf.m_PresentQueueIndex = i;
+					break;
+				}
+			}
+
+			if (!surf.m_SupportsPresent)
+				Log::Fatal("Surface doesn't support present on current GPU");
+
+			Log::Info("Created Surface for window - %s", window->GetWindowTitle().c_str());
+			return surf;
+		}
+
+		Swapchain Device::CreateSwapchain(Surface* surface, bool vsync)
 		{
 			Swapchain swapchain;
-			swapchain.m_AssociatedWindow = m_AssociatedWindow;
-			swapchain.m_AssociatedSurface = m_Surface;
+			swapchain.m_AssociatedWindow = surface->m_AssociatedWindow;
+			swapchain.m_AssociatedSurface = surface->m_Surface;
 			swapchain.m_ParentDevice = m_Device;
-			swapchain.m_PresentQueue = m_PresentQueue;
-			swapchain.m_PhysicalDevice = m_PhysicalDevice;
+			vkGetDeviceQueue(m_Device, surface->m_PresentQueueIndex, 0, &swapchain.m_PresentQueue);
+			swapchain.m_PhysicalDevice = surface->m_AssociatedPhysicalDevice;
 			swapchain.m_Settings.vsync = vsync;
 
 			swapchain.Create(m_Device, m_GraphicsQueueFamily, m_PresentQueueFamily);

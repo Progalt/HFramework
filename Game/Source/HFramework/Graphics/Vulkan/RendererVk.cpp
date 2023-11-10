@@ -15,7 +15,9 @@ namespace hf
 
 		m_Device.Create(deviceInfo);
 
-		m_Swapchain = m_Device.CreateSwapchain();
+		m_Surface = m_Device.CreateSurface(window);
+
+		m_Swapchain = m_Device.CreateSwapchain(&m_Surface);
 
 		m_BaseCommandLists = m_Device.AllocateCommandLists(hf::vulkan::Queue::Graphics, hf::vulkan::CommandListType::Primary, m_Swapchain.GetImageCount());
 		m_WorkFinished = m_Device.CreateSemaphores(m_Swapchain.GetImageCount());
@@ -24,13 +26,18 @@ namespace hf
 
 	void RendererVk::Destroy()
 	{
+
+
 		for (auto& semaphore : m_ImageAvailable)
 			semaphore.Dispose();
 
 		for (auto& semaphore : m_WorkFinished)
 			semaphore.Dispose();
 
+		
+
 		m_Swapchain.Dispose();
+		m_Surface.Dispose();
 		m_Device.Dispose();
 	}
 

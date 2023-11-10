@@ -107,6 +107,8 @@ namespace hf
 
 		uint32_t GetWindowID() { return m_WindowID; }
 
+		const std::string& GetWindowTitle() const { return m_WindowTitle; }
+
 
 		VkSurfaceKHR GetVulkanSurface(VkInstance instance);
 
@@ -145,5 +147,7 @@ namespace hf
 
 		bool m_UseWindowHitTest = false;
 		internal::HitTestData m_HitTestData; 
+
+		std::string m_WindowTitle = "";
 	};
 }

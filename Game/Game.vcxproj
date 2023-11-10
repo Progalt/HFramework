@@ -155,6 +155,7 @@
     <ClInclude Include="Source\FPSCamera.h" />
     <ClInclude Include="Source\HFramework\Core\Application.h" />
     <ClInclude Include="Source\HFramework\Core\EventHandler.h" />
+    <ClInclude Include="Source\HFramework\Core\GUIApplication.h" />
     <ClInclude Include="Source\HFramework\Core\KeyCodes.h" />
     <ClInclude Include="Source\HFramework\Core\Log.h" />
     <ClInclude Include="Source\HFramework\Core\Platform.h" />
@@ -179,6 +180,7 @@
     <ClInclude Include="Source\HFramework\Vulkan\GraphicsPipeline.h" />
     <ClInclude Include="Source\HFramework\Vulkan\SamplerState.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Semaphore.h" />
+    <ClInclude Include="Source\HFramework\Vulkan\Surface.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Swapchain.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Texture.h" />
     <ClInclude Include="Source\HFramework\Vulkan\TextureUtil.h" />
