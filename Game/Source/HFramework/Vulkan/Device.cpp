@@ -7,7 +7,6 @@ namespace hf
 	{
 		void Device::Create(const DeviceCreateInfo& deviceInfo)
 		{
-			m_AssociatedWindow = deviceInfo.window;
 			m_Debug = deviceInfo.validationLayers;
 
 

@@ -140,9 +140,6 @@
     <ClInclude Include="Source\HFramework\Core\Rect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\HFramework\SceneGraph\Node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\HFramework\Vulkan\SamplerState.h">
       <Filter>Header Files</Filter>
     </ClInclude>

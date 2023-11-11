@@ -3,7 +3,7 @@
 
 namespace hf
 {
-	void RendererVk::Init(Window* window)
+	void RendererVk::Init()
 	{
 		hf::vulkan::DeviceCreateInfo deviceInfo{};
 #ifdef _DEBUG
@@ -11,20 +11,8 @@ namespace hf
 #else 
 		deviceInfo.validationLayers = false;
 #endif
-		deviceInfo.window = window;
 
 		m_Device.Create(deviceInfo);
-
-		m_WindowData[window];
-		WindowData& windowData = m_WindowData[window];
-
-		windowData.surface = m_Device.CreateSurface(window);
-
-		windowData.swapchain = m_Device.CreateSwapchain(&windowData.surface);
-
-		windowData.baseCommandLists = m_Device.AllocateCommandLists(hf::vulkan::Queue::Graphics, hf::vulkan::CommandListType::Primary, windowData.swapchain.GetImageCount());
-		windowData.imageAvailable = m_Device.CreateSemaphores(windowData.swapchain.GetImageCount());
-		windowData.workFinished = m_Device.CreateSemaphores(windowData.swapchain.GetImageCount());
 	}
 
 	void RendererVk::Destroy()
@@ -49,11 +37,28 @@ namespace hf
 		m_Device.Dispose();
 	}
 
+
+
 	hf::vulkan::CommandList& RendererVk::GetCurrentFrameCmdList(Window* window)
 	{
 		WindowData& windowData = m_WindowData[window];
 
 		return windowData.baseCommandLists[windowData.currentFrameIndex];
+	}
+
+
+	void RendererVk::RegisterWindow(Window* window)
+	{
+		m_WindowData[window];
+		WindowData& windowData = m_WindowData[window];
+
+		windowData.surface = m_Device.CreateSurface(window);
+
+		windowData.swapchain = m_Device.CreateSwapchain(&windowData.surface);
+
+		windowData.baseCommandLists = m_Device.AllocateCommandLists(hf::vulkan::Queue::Graphics, hf::vulkan::CommandListType::Primary, windowData.swapchain.GetImageCount());
+		windowData.imageAvailable = m_Device.CreateSemaphores(windowData.swapchain.GetImageCount());
+		windowData.workFinished = m_Device.CreateSemaphores(windowData.swapchain.GetImageCount());
 	}
 
 	bool RendererVk::BeginFrame(Window* window)

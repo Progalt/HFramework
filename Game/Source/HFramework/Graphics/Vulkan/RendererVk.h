@@ -9,11 +9,14 @@ namespace hf
 	{
 	public:
 
-		void Init(Window* window) override;
+		void Init() override;
 
 		void Destroy() override;
 
 		void WaitIdle();
+
+
+		void RegisterWindow(Window* window) override;
 
 		bool BeginFrame(Window* window) override;
 

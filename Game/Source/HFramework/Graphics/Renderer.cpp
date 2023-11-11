@@ -5,10 +5,10 @@
 
 namespace hf
 {
-	Renderer* Renderer::CreateRenderer(Window* window)
+	Renderer* Renderer::CreateRenderer()
 	{
 		Renderer* renderer = new RendererVk;
-		renderer->Init(window);
+		renderer->Init();
 		return renderer;
 	}
 

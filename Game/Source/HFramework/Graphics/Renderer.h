@@ -9,9 +9,11 @@ namespace hf
 	{
 	public:
 
-		static Renderer* CreateRenderer(Window* window);
+		static Renderer* CreateRenderer();
 
 		static void DestroyRenderer(Renderer* renderer);
+
+		virtual void RegisterWindow(Window* window) = 0;
 
 		virtual bool BeginFrame(Window* window) = 0;
 
@@ -22,7 +24,7 @@ namespace hf
 
 	protected: 
 
-		virtual void Init(Window* window) = 0;
+		virtual void Init() = 0;
 
 		virtual void Destroy() = 0;
 

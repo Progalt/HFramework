@@ -34,7 +34,6 @@ namespace hf
 		struct DeviceCreateInfo
 		{
 			bool validationLayers;
-			Window* window;
 		};
 
 		struct SupportedFeatures
@@ -86,8 +85,6 @@ namespace hf
 			friend class DescriptorSet;
 
 			SupportedFeatures m_SupportedFeatures;
-
-			Window* m_AssociatedWindow;
 
 			VkInstance m_Instance;
 			VkDebugUtilsMessengerEXT m_DebugMessenger;

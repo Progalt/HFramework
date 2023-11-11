@@ -170,7 +170,6 @@
     <ClInclude Include="Source\HFramework\Graphics\ShaderEnums.h" />
     <ClInclude Include="Source\HFramework\Graphics\Vulkan\RendererVk.h" />
     <ClInclude Include="Source\HFramework\HFramework.h" />
-    <ClInclude Include="Source\HFramework\SceneGraph\Node.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Buffer.h" />
     <ClInclude Include="Source\HFramework\Vulkan\CommandList.h" />
     <ClInclude Include="Source\HFramework\Vulkan\DescriptorSet.h" />

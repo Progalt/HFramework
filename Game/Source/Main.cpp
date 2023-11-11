@@ -40,7 +40,13 @@ public:
 	{
 		GetMainWindow()->SetUseDarkMode(true);
 
-		renderer = hf::Renderer::CreateRenderer(GetMainWindow());
+		win2.Create("Window 2", 400, 300, hf::WindowFlags::Vulkan | hf::WindowFlags::Resizable);
+		GetEventHandler()->RegisterWindow(&win2);
+
+		renderer = hf::Renderer::CreateRenderer();
+		renderer->RegisterWindow(GetMainWindow());
+		renderer->RegisterWindow(&win2);
+
 
 
 		hf::vulkan::DescriptorSetLayout layout1;
@@ -208,50 +214,103 @@ public:
 	{
 		
 		
-		if (!renderer->BeginFrame(GetMainWindow()))
-			return;
+		if (GetMainWindow()->IsOpen())
+		{
+			if (renderer->BeginFrame(GetMainWindow()))
+			{
 
-		hf::vulkan::Texture* backbuffer = ((hf::RendererVk*)renderer)->GetWindowData(GetMainWindow()).swapchain.GetSwapchainImage();
-
-	
-
-
-		hf::vulkan::CommandList& cmdList = ((hf::RendererVk*)renderer)->GetCurrentFrameCmdList(GetMainWindow());
-
-		cmdList.Begin();
-
-
-		hf::vulkan::Attachment attachment{};
-		attachment.texture = backbuffer;
-		attachment.loadOp = hf::vulkan::LoadOp::Clear;
-		attachment.storeOp = hf::vulkan::StoreOp::Store;
-		attachment.clearColour = { 0.3f, 0.4f, 0.9f, 0.0f };
-
-		hf::vulkan::RenderpassInfo rpInfo{};
-		rpInfo.colourAttachments = { attachment };
-		cmdList.BeginRenderpass(rpInfo);
+				hf::vulkan::Texture* backbuffer = ((hf::RendererVk*)renderer)->GetWindowData(GetMainWindow()).swapchain.GetSwapchainImage();
 
 
 
-		cmdList.SetViewport(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
-		cmdList.SetScissor(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
 
-		cmdList.BindPipeline(&graphicsPipeline);
+				hf::vulkan::CommandList& cmdList = ((hf::RendererVk*)renderer)->GetCurrentFrameCmdList(GetMainWindow());
 
-		cmdList.BindDescriptorSets({ &descriptorSet }, 0);
+				cmdList.Begin();
 
-		cmdList.BindVertexBuffer(&vertexBuffer, 0);
-		cmdList.BindIndexBuffer(&indexBuffer, hf::IndexType::Uint16);
 
-		cmdList.DrawIndexed(6, 0);
+				hf::vulkan::Attachment attachment{};
+				attachment.texture = backbuffer;
+				attachment.loadOp = hf::vulkan::LoadOp::Clear;
+				attachment.storeOp = hf::vulkan::StoreOp::Store;
+				attachment.clearColour = { 0.3f, 0.4f, 0.9f, 0.0f };
 
-		cmdList.EndRenderpass();
+				hf::vulkan::RenderpassInfo rpInfo{};
+				rpInfo.colourAttachments = { attachment };
+				cmdList.BeginRenderpass(rpInfo);
 
-		cmdList.ResourceBarrier(backbuffer, hf::vulkan::ImageLayout::PresentSrc);
 
-		cmdList.End();
 
-		renderer->EndFrame(GetMainWindow());
+				cmdList.SetViewport(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
+				cmdList.SetScissor(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
+
+				cmdList.BindPipeline(&graphicsPipeline);
+
+				cmdList.BindDescriptorSets({ &descriptorSet }, 0);
+
+				cmdList.BindVertexBuffer(&vertexBuffer, 0);
+				cmdList.BindIndexBuffer(&indexBuffer, hf::IndexType::Uint16);
+
+				cmdList.DrawIndexed(6, 0);
+
+				cmdList.EndRenderpass();
+
+				cmdList.ResourceBarrier(backbuffer, hf::vulkan::ImageLayout::PresentSrc);
+
+				cmdList.End();
+
+				renderer->EndFrame(GetMainWindow());
+			}
+		}
+
+		if (win2.IsOpen())
+		{
+			if (renderer->BeginFrame(&win2))
+			{
+
+				hf::vulkan::Texture* backbuffer = ((hf::RendererVk*)renderer)->GetWindowData(&win2).swapchain.GetSwapchainImage();
+
+
+
+
+				hf::vulkan::CommandList& cmdList = ((hf::RendererVk*)renderer)->GetCurrentFrameCmdList(&win2);
+
+				cmdList.Begin();
+
+
+				hf::vulkan::Attachment attachment{};
+				attachment.texture = backbuffer;
+				attachment.loadOp = hf::vulkan::LoadOp::Clear;
+				attachment.storeOp = hf::vulkan::StoreOp::Store;
+				attachment.clearColour = { 0.9f, 0.4f, 0.3f, 0.0f };
+
+				hf::vulkan::RenderpassInfo rpInfo{};
+				rpInfo.colourAttachments = { attachment };
+				cmdList.BeginRenderpass(rpInfo);
+
+
+
+				cmdList.SetViewport(0, 0, win2.GetWidth(), win2.GetHeight());
+				cmdList.SetScissor(0, 0, win2.GetWidth(), win2.GetHeight());
+
+				cmdList.BindPipeline(&graphicsPipeline);
+
+				cmdList.BindDescriptorSets({ &descriptorSet }, 0);
+
+				cmdList.BindVertexBuffer(&vertexBuffer, 0);
+				cmdList.BindIndexBuffer(&indexBuffer, hf::IndexType::Uint16);
+
+				cmdList.DrawIndexed(6, 0);
+
+				cmdList.EndRenderpass();
+
+				cmdList.ResourceBarrier(backbuffer, hf::vulkan::ImageLayout::PresentSrc);
+
+				cmdList.End();
+
+				renderer->EndFrame(&win2);
+			}
+		}
 
 	}
 
@@ -283,6 +342,8 @@ public:
 
 
 	hf::vulkan::GraphicsPipeline graphicsPipeline;
+
+	hf::Window win2;
 
 private:
 };

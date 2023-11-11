@@ -102,7 +102,15 @@ namespace hf
 			createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 			createInfo.pApplicationInfo = &appInfo;
 			
-			std::vector<const char*> requiredExtensions = info.window->GetInstanceExtensions();
+			std::vector<const char*> requiredExtensions;
+			
+			requiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+
+#ifdef HF_PLATFORM_WINDOWS
+			requiredExtensions.push_back("VK_KHR_win32_surface");
+#else 
+#error This needs to be implemented or it isn't supported
+#endif
 
 			if (enableValidation) 
 			{
