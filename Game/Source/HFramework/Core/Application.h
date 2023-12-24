@@ -34,8 +34,6 @@ namespace hf
 			}
 
 			m_MainWindow.Create(info.title, info.width, info.height, hf::WindowFlags::Vulkan | hf::WindowFlags::Resizable);
-			m_MainWindow.SetDraggableRegion({ 0, 0, 50, 30 });
-			m_MainWindow.UseWindowHitTest(true);
 
 			m_EventHandler.RegisterWindow(&m_MainWindow);
 

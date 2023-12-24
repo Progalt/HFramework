@@ -74,6 +74,9 @@ namespace hf
 
 			void QueueSubmit(Queue queue, std::vector<CommandList*> cmdLists, Semaphore* wait, Semaphore* signal);
 
+
+			void QueueSubmit(Queue queue, std::vector<CommandList*> cmdLists, std::vector<Semaphore*> wait, Semaphore* signal);
+
 			void QueueWait(Queue queue);
 
 			void WaitIdle() { vkDeviceWaitIdle(m_Device); }
@@ -97,6 +100,8 @@ namespace hf
 			uint32_t m_GraphicsQueueFamily = 0;
 			uint32_t m_ComputeQueueFamily = 0;
 			uint32_t m_TransferQueueFamily = 0;
+
+			bool m_HasDedicatedTransferQueue = false; 
 
 			VkDevice m_Device;
 

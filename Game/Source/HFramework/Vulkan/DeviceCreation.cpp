@@ -238,7 +238,7 @@ namespace hf
 			{
 
 
-				if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && !foundTransferQueueFamily)
+				if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && !foundGraphicsQueueFamily)
 				{
 
 					m_GraphicsQueueFamily = i;
@@ -256,6 +256,7 @@ namespace hf
 				{
 					m_TransferQueueFamily = i;
 					foundTransferQueueFamily = true;
+					m_HasDedicatedTransferQueue = true; 
 				}
 				else if (queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT && m_TransferQueueFamily == m_GraphicsQueueFamily)
 				{
@@ -356,6 +357,7 @@ namespace hf
 
 			vkGetDeviceQueue(m_Device, m_GraphicsQueueFamily, 0, &m_GraphicsQueue);
 			vkGetDeviceQueue(m_Device, m_TransferQueueFamily, 0, &m_TransferQueue);
+
 			vkGetDeviceQueue(m_Device, m_ComputeQueueFamily, 0, &m_ComputeQueue);
 
 			Log::Info("Successfully Created Vulkan Device and retrieved Queues");

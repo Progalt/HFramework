@@ -40,12 +40,9 @@ public:
 	{
 		GetMainWindow()->SetUseDarkMode(true);
 
-		win2.Create("Window 2", 400, 300, hf::WindowFlags::Vulkan | hf::WindowFlags::Resizable);
-		GetEventHandler()->RegisterWindow(&win2);
 
 		renderer = hf::Renderer::CreateRenderer();
 		renderer->RegisterWindow(GetMainWindow());
-		renderer->RegisterWindow(&win2);
 
 
 
@@ -54,7 +51,7 @@ public:
 		layout1.AddTextureSampler(hf::ShaderStage::Fragment, 1, 1);
 
 		hf::vulkan::GraphicsPipelineDesc pipelineDesc{};
-		pipelineDesc.colourTargetFormats = { ((hf::RendererVk*)renderer)->GetWindowData(GetMainWindow()).swapchain.GetImageFormat() };
+		pipelineDesc.colourTargetFormats = { renderer->GetSwapchainFormat(GetMainWindow()) };
 		pipelineDesc.shaders[hf::ShaderStage::Vertex].bytecode = readFile("Assets/Shaders/base.vert.spv");
 		pipelineDesc.shaders[hf::ShaderStage::Fragment].bytecode = readFile("Assets/Shaders/base.frag.spv");
 		pipelineDesc.topologyMode = hf::TopologyMode::Triangles;
@@ -83,50 +80,31 @@ public:
 
 		
 
-		hf::vulkan::BufferDesc stagingBufferDesc{};
-		stagingBufferDesc.usage = hf::vulkan::BufferUsage::TransferSrc;
-		stagingBufferDesc.visibility = hf::vulkan::BufferVisibility::HostVisible;
-		stagingBufferDesc.bufferSize = sizeof(Vertex) * vertices.size() + sizeof(uint16_t) * indices.size();
+		hf::BufferDesc bufferDesc{};
+		bufferDesc.bufferType = hf::BufferType::Vertex;
+		bufferDesc.cpuVisible = false;
+		bufferDesc.size = sizeof(Vertex) * vertices.size();
 
-		hf::vulkan::Buffer staging = ((hf::RendererVk*)renderer)->m_Device.CreateBuffer(stagingBufferDesc);
+		vertexBuffer = renderer->CreateBuffer(bufferDesc);
+		vertexBuffer->Upload(vertices.data(), sizeof(Vertex) * vertices.size());
 
-		hf::vulkan::BufferDesc bufferDesc{};
-		bufferDesc.usage = hf::vulkan::BufferUsage::Vertex | hf::vulkan::BufferUsage::TransferDst;
-		bufferDesc.visibility = hf::vulkan::BufferVisibility::Device;
-		bufferDesc.bufferSize = sizeof(Vertex) * vertices.size();
+		hf::BufferDesc indexDesc{};
+		indexDesc.bufferType = hf::BufferType::Index;
+		indexDesc.cpuVisible = false;
+		indexDesc.size = sizeof(uint16_t) * indices.size();
 
-		vertexBuffer = ((hf::RendererVk*)renderer)->m_Device.CreateBuffer(bufferDesc);
-
-
-		hf::vulkan::BufferDesc indexBufferDesc{};
-		indexBufferDesc.usage = hf::vulkan::BufferUsage::Index | hf::vulkan::BufferUsage::TransferDst;
-		indexBufferDesc.visibility = hf::vulkan::BufferVisibility::Device;
-		indexBufferDesc.bufferSize = sizeof(uint16_t) * indices.size();
-
-		indexBuffer = ((hf::RendererVk*)renderer)->m_Device.CreateBuffer(indexBufferDesc);
-
-		void* mapped = staging.Map();
-		char* mappedC = (char*)mapped;
-		memcpy(mappedC, vertices.data(), bufferDesc.bufferSize);
-		memcpy(mappedC + bufferDesc.bufferSize, indices.data(), indexBufferDesc.bufferSize);
-		staging.Unmap();
-
-		((hf::RendererVk*)renderer)->m_Device.ExecuteSingleUsageCommandList(hf::vulkan::Queue::Graphics, [&](hf::vulkan::CommandList& cmd)
-			{
-				cmd.CopyBuffer(&staging, &vertexBuffer, sizeof(Vertex) * vertices.size());
-				cmd.CopyBuffer(&staging, &indexBuffer, sizeof(uint16_t) * indices.size(), sizeof(Vertex) * vertices.size());
-			});
-
+		indexBuffer = renderer->CreateBuffer(indexDesc);
+		indexBuffer->Upload(indices.data(), sizeof(uint16_t) * indices.size());
 		
 		proj = glm::perspective(glm::radians(70.0f), (float)GetMainWindow()->GetWidth() / (float)GetMainWindow()->GetHeight(), 0.01f, 100.0f);
 
 
-		hf::vulkan::BufferDesc uniformDesc{};
-		uniformDesc.usage = hf::vulkan::BufferUsage::Uniform;
-		uniformDesc.visibility = hf::vulkan::BufferVisibility::HostVisible;
-		uniformDesc.bufferSize = sizeof(glm::mat4);
+		hf::BufferDesc uniformDesc{};
+		uniformDesc.bufferType = hf::BufferType::Uniform;
+		uniformDesc.cpuVisible = true;
+		uniformDesc.size = sizeof(glm::mat4);
 
-		uniformBuffer = ((hf::RendererVk*)renderer)->m_Device.CreateBuffer(uniformDesc);
+		uniformBuffer = renderer->CreateBuffer(uniformDesc);
 
 
 		/* texture load */
@@ -169,10 +147,10 @@ public:
 		hf::vulkan::SamplerState samplerState;
 		samplerState.min = hf::FilterMode::Linear;
 		samplerState.mag = hf::FilterMode::Linear;
-		samplerState.maxAnisotropy = ((hf::RendererVk*)renderer)->m_Device.GetSupportedFeatures().maxAnisotropy;
+		samplerState.maxAnisotropy = ((hf::RendererVk*)renderer)->m_Device.GetSupportedFeatures().maxAnis otropy;
 
 		descriptorSet = ((hf::RendererVk*)renderer)->m_Device.AllocateDescriptorSet(layout1);
-		descriptorSet.BindUniformBuffer(uniformBuffer, 0);
+		descriptorSet.BindUniformBuffer(((hf::BufferVk*)uniformBuffer.get())->m_Buffer, 0);
 		descriptorSet.BindTextureSampler(testTexture, samplerState, 1);
 		descriptorSet.Write();
 
@@ -183,7 +161,6 @@ public:
 				proj = glm::perspective(glm::radians(70.0f), (float)GetMainWindow()->GetWidth() / (float)GetMainWindow()->GetHeight(), 0.01f, 100.0f);
 			});
 
-		staging.Dispose();
 		imgStaging.Dispose();
 
 	
@@ -193,134 +170,73 @@ public:
 
 	void Update(float deltaTime) override
 	{
-		static float total = 0.0f;
-		total += deltaTime * 0.5f;
-
-		glm::vec3 pos = { sin(total) * 2.0f, 1.0f, cos(total) * 2.0f };
 
 		camera.Update(deltaTime);
 
 		glm::mat4 view = camera.GetMatrix();
 		glm::mat4 vp = proj * view;
 
-		void* uboMapped = uniformBuffer.Map();
-		memcpy(uboMapped, &vp, sizeof(vp));
-		uniformBuffer.Unmap();
-
+		uniformBuffer->Upload(&vp, sizeof(vp));
 
 	}
 
 	void Render() override
 	{
 		
+
+		if (renderer->BeginFrame(GetMainWindow()))
+		{
+
+			hf::vulkan::Texture* backbuffer = ((hf::RendererVk*)renderer)->GetWindowData(GetMainWindow()).swapchain.GetSwapchainImage();
+
+
+			hf::vulkan::CommandList& cmdList = ((hf::RendererVk*)renderer)->GetCurrentFrameCmdList(GetMainWindow());
+
+			cmdList.Begin();
+
+
+			hf::vulkan::Attachment attachment{};
+			attachment.texture = backbuffer;
+			attachment.loadOp = hf::vulkan::LoadOp::Clear;
+			attachment.storeOp = hf::vulkan::StoreOp::Store;
+			attachment.clearColour = { 0.3f, 0.4f, 0.9f, 0.0f };
+
+			hf::vulkan::RenderpassInfo rpInfo{};
+			rpInfo.colourAttachments = { attachment };
+			cmdList.BeginRenderpass(rpInfo);
+
+
+
+			cmdList.SetViewport(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
+			cmdList.SetScissor(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
+
+			cmdList.BindPipeline(&graphicsPipeline);
+
+			cmdList.BindDescriptorSets({ &descriptorSet }, 0);
+
+			cmdList.BindVertexBuffer(&((hf::BufferVk*)vertexBuffer.get())->m_Buffer, 0);
+			cmdList.BindIndexBuffer(&((hf::BufferVk*)indexBuffer.get())->m_Buffer, hf::IndexType::Uint16);
+
+			cmdList.DrawIndexed(6, 0);
+
+			cmdList.EndRenderpass();
+
+			cmdList.ResourceBarrier(backbuffer, hf::vulkan::ImageLayout::PresentSrc);
+
+			cmdList.End();
+
+			renderer->EndFrame(GetMainWindow());
+		}
 		
-		if (GetMainWindow()->IsOpen())
-		{
-			if (renderer->BeginFrame(GetMainWindow()))
-			{
-
-				hf::vulkan::Texture* backbuffer = ((hf::RendererVk*)renderer)->GetWindowData(GetMainWindow()).swapchain.GetSwapchainImage();
-
-
-
-
-				hf::vulkan::CommandList& cmdList = ((hf::RendererVk*)renderer)->GetCurrentFrameCmdList(GetMainWindow());
-
-				cmdList.Begin();
-
-
-				hf::vulkan::Attachment attachment{};
-				attachment.texture = backbuffer;
-				attachment.loadOp = hf::vulkan::LoadOp::Clear;
-				attachment.storeOp = hf::vulkan::StoreOp::Store;
-				attachment.clearColour = { 0.3f, 0.4f, 0.9f, 0.0f };
-
-				hf::vulkan::RenderpassInfo rpInfo{};
-				rpInfo.colourAttachments = { attachment };
-				cmdList.BeginRenderpass(rpInfo);
-
-
-
-				cmdList.SetViewport(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
-				cmdList.SetScissor(0, 0, GetMainWindow()->GetWidth(), GetMainWindow()->GetHeight());
-
-				cmdList.BindPipeline(&graphicsPipeline);
-
-				cmdList.BindDescriptorSets({ &descriptorSet }, 0);
-
-				cmdList.BindVertexBuffer(&vertexBuffer, 0);
-				cmdList.BindIndexBuffer(&indexBuffer, hf::IndexType::Uint16);
-
-				cmdList.DrawIndexed(6, 0);
-
-				cmdList.EndRenderpass();
-
-				cmdList.ResourceBarrier(backbuffer, hf::vulkan::ImageLayout::PresentSrc);
-
-				cmdList.End();
-
-				renderer->EndFrame(GetMainWindow());
-			}
-		}
-
-		if (win2.IsOpen())
-		{
-			if (renderer->BeginFrame(&win2))
-			{
-
-				hf::vulkan::Texture* backbuffer = ((hf::RendererVk*)renderer)->GetWindowData(&win2).swapchain.GetSwapchainImage();
-
-
-
-
-				hf::vulkan::CommandList& cmdList = ((hf::RendererVk*)renderer)->GetCurrentFrameCmdList(&win2);
-
-				cmdList.Begin();
-
-
-				hf::vulkan::Attachment attachment{};
-				attachment.texture = backbuffer;
-				attachment.loadOp = hf::vulkan::LoadOp::Clear;
-				attachment.storeOp = hf::vulkan::StoreOp::Store;
-				attachment.clearColour = { 0.9f, 0.4f, 0.3f, 0.0f };
-
-				hf::vulkan::RenderpassInfo rpInfo{};
-				rpInfo.colourAttachments = { attachment };
-				cmdList.BeginRenderpass(rpInfo);
-
-
-
-				cmdList.SetViewport(0, 0, win2.GetWidth(), win2.GetHeight());
-				cmdList.SetScissor(0, 0, win2.GetWidth(), win2.GetHeight());
-
-				cmdList.BindPipeline(&graphicsPipeline);
-
-				cmdList.BindDescriptorSets({ &descriptorSet }, 0);
-
-				cmdList.BindVertexBuffer(&vertexBuffer, 0);
-				cmdList.BindIndexBuffer(&indexBuffer, hf::IndexType::Uint16);
-
-				cmdList.DrawIndexed(6, 0);
-
-				cmdList.EndRenderpass();
-
-				cmdList.ResourceBarrier(backbuffer, hf::vulkan::ImageLayout::PresentSrc);
-
-				cmdList.End();
-
-				renderer->EndFrame(&win2);
-			}
-		}
-
 	}
 
 	void Destroy() override
 	{
 		((hf::RendererVk*)renderer)->WaitIdle();
 
-		vertexBuffer.Dispose();
-		indexBuffer.Dispose();
-		uniformBuffer.Dispose();
+		vertexBuffer->Dispose();
+		indexBuffer->Dispose();
+		uniformBuffer->Dispose();
 		graphicsPipeline.Dispose();
 		testTexture.Dispose();
 
@@ -334,16 +250,15 @@ public:
 
 	FPSCamera camera;
 
-	hf::vulkan::Buffer vertexBuffer;
-	hf::vulkan::Buffer indexBuffer;
-	hf::vulkan::Buffer uniformBuffer;
 	hf::vulkan::DescriptorSet descriptorSet;
 	hf::vulkan::Texture testTexture;
 
+	std::shared_ptr<hf::Buffer> vertexBuffer;
+	std::shared_ptr<hf::Buffer> uniformBuffer;
+	std::shared_ptr<hf::Buffer> indexBuffer;
 
 	hf::vulkan::GraphicsPipeline graphicsPipeline;
 
-	hf::Window win2;
 
 private:
 };

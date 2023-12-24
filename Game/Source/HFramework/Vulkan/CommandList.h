@@ -93,6 +93,8 @@ namespace hf
 		{
 		public:
 
+			bool FinishedExecution(); 
+
 			void Begin(RenderpassInfo* inheritanceInfo = nullptr);
 
 			void End();

@@ -306,6 +306,14 @@ namespace hf
 
 		void Device::QueueSubmit(Queue queue, std::vector<CommandList*> cmdLists, Semaphore* wait, Semaphore* signal)
 		{
+			std::vector<Semaphore*> semaphores;
+			semaphores.push_back(wait);
+			QueueSubmit(queue, cmdLists, semaphores, signal);
+			//m_FencePool.Reclaim();
+		}
+
+		void Device::QueueSubmit(Queue queue, std::vector<CommandList*> cmdLists, std::vector<Semaphore*> wait, Semaphore* signal)
+		{
 			m_FencePool.Reclaim();
 
 			VkQueue submitQueue = m_GraphicsQueue;
@@ -326,12 +334,18 @@ namespace hf
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-			VkSemaphore waitSemaphores[] = { wait->m_Semaphore };
+			std::vector< VkSemaphore> waitSemaphores{};
+			std::vector< VkPipelineStageFlags> waitStages;
+			
+			for (auto& semaphore : wait)
+			{
+				waitSemaphores.push_back(semaphore->m_Semaphore);
+				waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+			}
 
-			VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-			submitInfo.waitSemaphoreCount = 1;
-			submitInfo.pWaitSemaphores = waitSemaphores;
-			submitInfo.pWaitDstStageMask = waitStages;
+			submitInfo.waitSemaphoreCount = waitSemaphores.size();
+			submitInfo.pWaitSemaphores = waitSemaphores.data();
+			submitInfo.pWaitDstStageMask = waitStages.data();
 
 			std::vector<VkCommandBuffer> buffers(cmdLists.size());
 
@@ -365,7 +379,6 @@ namespace hf
 				Log::Error("Failed to submit command lists to graphics queue");
 			}
 
-			//m_FencePool.Reclaim();
 		}
 
 		VkCommandPool Device::CreateNewCommandPool(Queue queue)

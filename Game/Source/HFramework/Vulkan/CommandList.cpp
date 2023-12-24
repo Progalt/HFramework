@@ -7,6 +7,22 @@ namespace hf
 {
 	namespace vulkan
 	{
+		bool CommandList::FinishedExecution()
+		{
+			if (m_FinishedExecution)
+			{
+				VkResult result = vkGetFenceStatus(m_Device, m_FinishedExecution); 
+
+				if (result == VK_SUCCESS)
+					return true;
+				else if (result == VK_NOT_READY)
+					return false; 
+			}
+			
+			// If we have no fence just return finished since the command list hasn't been submitted at all 
+			return true; 
+		}
+
 		void CommandList::Begin(RenderpassInfo* info)
 		{
 			if (m_FinishedExecution)
@@ -34,7 +50,7 @@ namespace hf
 				if (info == nullptr)
 					Log::Fatal("Secondary Command Lists Require inheritance Info passed by RenderPassInfo struct");
 
-				if (!info->useSecondaryListsForRendering)
+				if (info->useSecondaryListsForRendering == false)
 					Log::Fatal("Current Renderpass is not setup for secondary command list rendering");
 
 				inheritanceInfo.renderPass = VK_NULL_HANDLE;

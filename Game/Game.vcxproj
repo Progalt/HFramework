@@ -138,6 +138,7 @@
     <ClCompile Include="Source\HFramework\Core\EventHandler.cpp" />
     <ClCompile Include="Source\HFramework\Core\Window.cpp" />
     <ClCompile Include="Source\HFramework\Graphics\Renderer.cpp" />
+    <ClCompile Include="Source\HFramework\Graphics\Vulkan\BufferVk.cpp" />
     <ClCompile Include="Source\HFramework\Graphics\Vulkan\RendererVk.cpp" />
     <ClCompile Include="Source\HFramework\Vulkan\CommandList.cpp" />
     <ClCompile Include="Source\HFramework\Vulkan\DescriptorSet.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="Source\HFramework\Graphics\Format.h" />
     <ClInclude Include="Source\HFramework\Graphics\Renderer.h" />
     <ClInclude Include="Source\HFramework\Graphics\ShaderEnums.h" />
+    <ClInclude Include="Source\HFramework\Graphics\Vulkan\BufferVk.h" />
     <ClInclude Include="Source\HFramework\Graphics\Vulkan\RendererVk.h" />
     <ClInclude Include="Source\HFramework\HFramework.h" />
     <ClInclude Include="Source\HFramework\Vulkan\Buffer.h" />

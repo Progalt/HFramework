@@ -60,6 +60,9 @@
     <ClCompile Include="Source\HFramework\Graphics\Vulkan\RendererVk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\HFramework\Graphics\Vulkan\BufferVk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\HFramework\Core\Application.h">
@@ -165,6 +168,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\HFramework\Graphics\Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\HFramework\Graphics\Vulkan\BufferVk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
